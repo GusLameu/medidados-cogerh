@@ -1,0 +1,11 @@
+#Dados locais
+Medidores-2026.xslx
+Medidores - 2026.xlsx
+logo.ico
+
+#cache do python
+**/__pycache__/
+*.pyc
+
+#ignorar os inits
+**/__init__.py
