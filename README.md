@@ -1,18 +1,103 @@
-# 💫 About Me:
-🔭 I am currently working on a dashboard and a 3D game.<br>🌱 I’m currently learning Django and Java Springboot<br>⚡ Fun fact: I love Mangos
+# 📊 Medidados
 
-
-## 🌐 Socials:
-[![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://instagram.com/gusll_) [![email](https://img.shields.io/badge/Email-D14836?logo=gmail&logoColor=white)](mailto:gustav.lo.lameu@gmail.com) 
-
-# 💻 Tech Stack:
-![C](https://img.shields.io/badge/c-%2300599C.svg?style=for-the-badge&logo=c&logoColor=white) ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white) ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white) ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E) ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white) ![Django](https://img.shields.io/badge/django-%23092E20.svg?style=for-the-badge&logo=django&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi) ![JavaFX](https://img.shields.io/badge/javafx-%23FF0000.svg?style=for-the-badge&logo=javafx&logoColor=white) ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white) ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white) ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) ![Spring](https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white) ![Streamlit](https://img.shields.io/badge/Streamlit-%23FE4B4B.svg?style=for-the-badge&logo=streamlit&logoColor=white) ![MySQL](https://img.shields.io/badge/mysql-4479A1.svg?style=for-the-badge&logo=mysql&logoColor=white) ![Figma](https://img.shields.io/badge/figma-%23F24E1E.svg?style=for-the-badge&logo=figma&logoColor=white) ![Canva](https://img.shields.io/badge/Canva-%2300C4CC.svg?style=for-the-badge&logo=Canva&logoColor=white) ![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black) ![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white) ![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white) ![Plotly](https://img.shields.io/badge/Plotly-%233F4F75.svg?style=for-the-badge&logo=plotly&logoColor=white) ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white) ![Jira](https://img.shields.io/badge/jira-%230A0FFF.svg?style=for-the-badge&logo=jira&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white) ![Power Bi](https://img.shields.io/badge/power_bi-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)
-# 📊 GitHub Stats:
-![](https://github-readme-stats.shion.dev/api?username=GusLameu&theme=dark&hide_border=false&include_all_commits=false&count_private=false)<br/>
-![](https://streak-stats.demolab.com/?user=GusLameu&theme=dark&hide_border=false)<br/>
-![](https://github-readme-stats.shion.dev/api/top-langs/?username=GusLameu&theme=dark&hide_border=false&include_all_commits=false&count_private=false&layout=compact)
+O **Medidados** é uma aplicação desktop desenvolvida para análise técnica e visualização de dados de medidores de fluxo. O sistema automatiza o processo de leitura, tratamento e interpretação dos arquivos brutos, transformando dados de telemetria em dashboards interativos e relatórios visuais de apoio técnico. [file:2][file:3][file:4]
 
 ---
-[![](https://komarev.com/ghpvc/?username=GusLameu&icon=0&color=2)](https://visitcount.itsvg.in)
 
-<!-- Proudly created with GPRM ( https://gprm.itsvg.in ) -->
+## 🚀 Estrutura do Projeto
+
+O projeto foi reorganizado em uma arquitetura modular para separar responsabilidades entre interface, processamento, configuração e utilitários:
+
+* **`main.py`**: O ponto de entrada da aplicação. Inicializa a interface principal e executa o loop da GUI. [file:11]
+* **`src/ui/app.py`**: A interface principal do sistema. Gerencia a tela inicial, seleção manual de arquivos, drag-and-drop e abertura do dashboard. [file:2]
+* **`src/ui/dashboard_window.py`**: Responsável pela janela de dashboard, gráficos, indicadores e exportação do relatório em imagem. [file:3]
+* **`src/services/data_processing.py`**: O núcleo de processamento de dados. Realiza carregamento, limpeza, padronização e cálculo das métricas dos medidores. [file:4]
+* **`src/services/medidor_lookup.py`**: Responsável por consultar tipo e modelo do medidor a partir do número de série. [file:5]
+* **`src/core/config.py`**: Centraliza mapeamentos de colunas, parâmetros visuais, cores e configurações por modelo de medidor. [file:6]
+* **`src/utils/helpers.py`**: Utilitários auxiliares, incluindo resolução de caminhos para recursos locais e empacotados. [file:1]
+
+---
+
+## 🛠️ Detalhes dos Módulos
+
+### 1. `main.py`
+É o ponto de entrada da aplicação. Sua função é iniciar a interface principal e manter a execução da aplicação.
+
+> **Nota do Desenvolvedor:** Se o `main.py` fosse um estagiário, ele continuaria sendo aquele que abre a porta da sala e chama quem realmente vai tocar o serviço pesado. [file:11]
+
+```python
+from src.ui.app import AppAnalise
+
+if __name__ == "__main__":
+    app = AppAnalise()
+    app.mainloop()
+```
+
+### 2. `src/services/data_processing.py`
+Responsável por toda a inteligência de dados:
+* **Carregamento:** Lê arquivos `.csv`, `.xlsx` e `.xls`. [file:4]
+* **Saneamento:** Padroniza colunas, converte números no formato brasileiro e trata valores inválidos. [file:4]
+* **Datas:** Converte e ordena séries temporais corretamente com `dayfirst=True`. [file:4]
+* **Métricas:** Calcula faixas de vazão, qualidade dos dados, status hidráulico e indicadores gerais. [file:4]
+
+### 3. `src/ui/app.py`
+Interface principal baseada em `CustomTkinter`:
+* **Drag & Drop:** Permite arrastar arquivos diretamente para a janela inicial. [file:2]
+* **Automação:** Extrai o número de série do arquivo e consulta automaticamente o modelo do medidor. [file:2][file:4][file:5]
+* **Fluxo de uso:** Encaminha os dados processados para o dashboard correspondente. [file:2][file:3]
+
+### 4. `src/ui/dashboard_window.py`
+Responsável pela parte visual da análise:
+* **Visualização:** Gera gráficos com eixo temporal, linhas de vazão, velocidade e volume conforme o modelo. [file:3]
+* **Interatividade:** Exibe tooltip com valores ao passar o mouse sobre o gráfico. [file:3]
+* **Exportação:** Permite salvar o relatório atual em PNG com alta resolução. [file:3]
+* **Layouts específicos:** Possui tratamento diferente para modelos como o MV145, com layout simplificado. [file:3]
+
+---
+
+## 📦 Instalação e Dependências
+
+Para rodar o Medidados, instale as dependências do projeto em um ambiente virtual Python. O arquivo `requirements.txt` desta versão inclui `pandas`, `matplotlib`, `numpy` e `mplcursors`, enquanto a interface também usa bibliotecas como `customtkinter` e `tkinterdnd2` no código da aplicação. [file:10][file:2]
+
+### Passo a Passo:
+
+1. **Crie e ative um ambiente virtual**
+   ```bash
+   python -m venv .venv
+   ```
+
+2. **Ative o ambiente**
+   ```bash
+   .venv\Scripts\activate
+   ```
+   No Linux/macOS:
+   ```bash
+   source .venv/bin/activate
+   ```
+
+3. **Instale as dependências**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Inicie a aplicação**
+   ```bash
+   python main.py
+   ```
+
+---
+
+## 💡 Como Usar
+
+1. **Importação:** Arraste um arquivo CSV/Excel para a área indicada ou clique em **Buscar Arquivo Manualmente**. [file:2]
+2. **Identificação:** O sistema tenta extrair o número de série automaticamente e localizar o tipo/modelo do medidor. [file:2][file:4][file:5]
+3. **Processamento:** Os dados são limpos, convertidos e organizados conforme o modelo identificado. [file:4]
+4. **Exploração:** O dashboard é aberto com gráficos, métricas e indicadores específicos do medidor. [file:3]
+5. **Relatório:** Clique em **Exportar Relatório** para salvar a visualização atual em PNG. [file:3]
+
+---
+
+## 👤 Autor
+
+* **Gustavo Lopes Lameu** - GEMED
+* *v2.0 - Sistema de Análise Técnica*
