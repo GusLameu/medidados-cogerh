@@ -4,12 +4,49 @@ Configurações e Constantes do Sistema
 
 # Mapeamento de colunas original -> padrão do sistema
 MAPA_COLUNAS = {
-    "MV110":   {"E3TIMESTAMP": "Data", "TOTALIZADO": "Total", "TENSAOE1_QUALITY": "Qualidade", "VAZAO": "Vazao", "FLOWSPEED": "Velocidade", "PROCESS": "Process"},
-    "MV145":   {"DATA_DISPOSITIVO": "Data", "VAZAO": "Vazao", "VOLUME":"Volume"},
-    "XMT1000": {"E3TIMESTAMP": "Data", "TOTAL_POS": "Total", "VELOCIDADE_SOM_QUALITY": "Qualidade", "VAZAO": "Vazao", "VELOCIDADE": "Velocidade"},
-    "NF550":   {"E3TIMESTAMP": "Data", "TOTALIZADO": "Total", "VELOCIDADE_SOM_QUALITY": "Qualidade", "VAZAO": "Vazao", "VELOCIDADE": "Velocidade","QUALIDADE_HIDRAULICA":"QHidraulica"},
-    "NF750":   {"E3TIMESTAMP": "Data", "TOTALIZADO": "Total", "VELOCIDADE_SOM_QUALITY": "Qualidade", "VAZAO": "Vazao", "VELOCIDADE": "Velocidade", "QUALIDADE_HIDRAULICA":"QHidraulica"},
-    "AT600":   {"E3TIMESTAMP": "Data", "TOTAL_POS": "Total", "VELOCIDADE_SOM_QUALITY": "Qualidade", "VAZAO": "Vazao", "VELOCIDADE": "Velocidade"}
+    "MV110": {
+        "E3TIMESTAMP": "Data",
+        "TOTALIZADO": "Total",
+        "TENSAOE1_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "FLOWSPEED": "Velocidade",
+        "PROCESS": "Process"
+    },
+    "MV145": {
+        "DATA_DISPOSITIVO": "Data",
+        "VAZAO": "Vazao",
+        "VOLUME": "Volume"
+    },
+    "XMT1000": {
+        "E3TIMESTAMP": "Data",
+        "TOTAL_POS": "Total",
+        "VELOCIDADE_SOM_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "VELOCIDADE": "Velocidade"
+    },
+    "NF550": {
+        "E3TIMESTAMP": "Data",
+        "TOTALIZADO": "Total",
+        "VELOCIDADE_SOM_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "VELOCIDADE": "Velocidade",
+        "QUALIDADE_HIDRAULICA": "QHidraulica"
+    },
+    "NF750": {
+        "E3TIMESTAMP": "Data",
+        "TOTALIZADO": "Total",
+        "VELOCIDADE_SOM_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "VELOCIDADE": "Velocidade",
+        "QUALIDADE_HIDRAULICA": "QHidraulica"
+    },
+    "AT600": {
+        "E3TIMESTAMP": "Data",
+        "TOTAL_POS": "Total",
+        "VELOCIDADE_SOM_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "VELOCIDADE": "Velocidade"
+    }
 }
 
 # Configurações Visuais (UI/Dashboard)
@@ -40,13 +77,11 @@ PIE_COLORS = {
         "default": CORES_ROSCA
     },
     "qualidade": {
-        "patterns": {
-
-        },
+        "patterns": {},
         "default": CORES_ROSCA
     },
     "status_hidraulico": {
-        "patterns" :{
+        "patterns": {
             "< 90": COR_STATUS_RUIM,
             "90-99": COR_STATUS_MEDIO,
             "= 100": COR_STATUS_BOM
@@ -54,7 +89,7 @@ PIE_COLORS = {
         "default": CORES_ROSCA
     },
     "status_process": {
-        "patterns":{
+        "patterns": {
             "8192": COR_STATUS_RUIM,
             "4096": COR_STATUS_MEDIO,
             "0": COR_STATUS_BOM
@@ -62,6 +97,7 @@ PIE_COLORS = {
         "default": CORES_ROSCA
     }
 }
+
 MODELO_CONFIG = {
     "MV110": {
         "layout": "completo",

@@ -215,6 +215,7 @@ class DataProcessingService:
 
         Args:
             data_frame: O DataFrame pandas com os dados do medidor já processados.
+
         Returns:
             Um dicionário com a contagem de cada categoria presente na coluna Process.
         """
@@ -232,7 +233,7 @@ class DataProcessingService:
                     label = f"Processo {int(key)}"
                 else:
                     label = f"Processo {key}"
-                    
+
             process_status[label] = int(value)
 
         return {k: v for k, v in process_status.items() if v > 0}

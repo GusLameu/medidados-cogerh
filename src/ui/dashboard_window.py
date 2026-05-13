@@ -77,7 +77,7 @@ class DashboardWindow(ctk.CTkToplevel):
 
             process_status_raw = (
                 DataProcessingService.calculate_process_status(data_frame)
-                if "statusprocesso" in self.model_config["pie_charts"]
+                if "status_process" in self.model_config["pie_charts"]
                 else {}
             )
             process_status_filtered = {k: v for k, v in process_status_raw.items() if v > 0}
@@ -97,7 +97,6 @@ class DashboardWindow(ctk.CTkToplevel):
                 process_status_filtered,
                 general_indicators
             )
-
     def _setup_simplified_layout(self, data_frame: pd.DataFrame, medidor_type: str, general_indicators: Dict[str, Any]) -> None:
         """Layout simplificado apenas com gráfico de vazão e volume (MV145)."""
         self.fig = plt.figure(figsize=(16, 8), dpi=100)
