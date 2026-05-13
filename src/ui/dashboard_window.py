@@ -286,13 +286,13 @@ class DashboardWindow(ctk.CTkToplevel):
 
         if "vazao" in self.model_config["pie_charts"]:
             pie_configs.append(
-                (flow_ranges, "Percentual por Faixa de Vazão", (1, col_idx), "vazao")
+                (flow_ranges, "Faixa de Vazão", (1, col_idx), "vazao")
             )
             col_idx += 1
 
         if "qualidade" in self.model_config["pie_charts"]:
             pie_configs.append(
-                (data_quality, "Qualidade da Integridade dos Dados", (1, col_idx), "qualidade")
+                (data_quality, "Qualidade Telemetria", (1, col_idx), "qualidade")
             )
             col_idx += 1
 
