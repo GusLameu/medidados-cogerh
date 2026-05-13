@@ -100,4 +100,4 @@ Para rodar o Medidados, instale as dependências do projeto em um ambiente virtu
 ## 👤 Autor
 
 * **Gustavo Lopes Lameu** - GEMED
-* *v2.0 - Sistema de Análise Técnica*
+* *v2.1 - Sistema de Análise Técnica*

@@ -15,8 +15,8 @@ from typing import Optional, Dict, Any, Tuple, List
 from src.services.data_processing import DataProcessingService
 from src.utils.helpers import resource_path
 from src.core.config import (
-    COR_VAZAO, COR_VELOCIDADE, COR_TEXTO, CORES_ROSCA, 
-    MODELO_CONFIG, COR_STATUS_RUIM, COR_STATUS_MEDIO, COR_STATUS_BOM,
+    COR_VAZAO, COR_VELOCIDADE, CORES_ROSCA, 
+    MODELO_CONFIG,
     PIE_COLORS
 )
 
@@ -40,45 +40,62 @@ class DashboardWindow(ctk.CTkToplevel):
         self.medidor_model = medidor_model
         self.data_frame = data_frame
         self.title(f"Medidados - Dashboard: {medidor_type} ({medidor_model})")
-        self._last_hover_idx: Optional[int] = None 
-        self._background_cache: Optional[Any] = None 
-        self.pie_chart_legends: List[Any] = [] 
+        self._last_hover_idx: Optional[int] = None
+        self._background_cache: Optional[Any] = None
+        self.pie_chart_legends: List[Any] = []
         self.state('zoomed')
         self.configure(fg_color="white")
 
-        try: self.after(200, lambda: self.iconbitmap(resource_path("logo.ico")))
-        except: pass
+        try:
+            self.after(200, lambda: self.iconbitmap(resource_path("logo.ico")))
+        except:
+            pass
 
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
 
-        # Obter configuração do modelo
         self.model_config = MODELO_CONFIG.get(medidor_model, MODELO_CONFIG["MV110"])
 
-        # Calcular métricas apenas uma vez para evitar duplicação
-        if self.model_config["show_pie_charts"] or not self.model_config["show_pie_charts"]:
-            flow_ranges_raw, data_quality_raw, general_indicators = DataProcessingService.calculate_dashboard_metrics(data_frame)
+        flow_ranges_raw, data_quality_raw, general_indicators = (
+            DataProcessingService.calculate_dashboard_metrics(data_frame)
+        )
 
-            # Filtrar métricas apenas para layouts que precisam
-            if medidor_model == "MV145":
-                flow_ranges_filtered = {}
-                data_quality_filtered = {}
-                hydraulic_status_filtered = {}
-            else:
-                flow_ranges_filtered = {k: v for k, v in flow_ranges_raw.items() if v > 0}
-                data_quality_filtered = {k: v for k, v in data_quality_raw.items() if v > 0}
-                hydraulic_status_raw = DataProcessingService.calculate_hydraulic_status(data_frame) if self.model_config["show_status_process"] else {}
-                hydraulic_status_filtered = {k: v for k, v in hydraulic_status_raw.items() if v > 0}
+        if medidor_model == "MV145":
+            flow_ranges_filtered = {}
+            data_quality_filtered = {}
+            hydraulic_status_filtered = {}
+            process_status_filtered = {}
+        else:
+            flow_ranges_filtered = {k: v for k, v in flow_ranges_raw.items() if v > 0}
+            data_quality_filtered = {k: v for k, v in data_quality_raw.items() if v > 0}
+
+            hydraulic_status_raw = (
+                DataProcessingService.calculate_hydraulic_status(data_frame)
+                if "status_hidraulico" in self.model_config["pie_charts"]
+                else {}
+            )
+            hydraulic_status_filtered = {k: v for k, v in hydraulic_status_raw.items() if v > 0}
+
+            process_status_raw = (
+                DataProcessingService.calculate_process_status(data_frame)
+                if "statusprocesso" in self.model_config["pie_charts"]
+                else {}
+            )
+            process_status_filtered = {k: v for k, v in process_status_raw.items() if v > 0}
 
         plt.rcParams['axes.facecolor'] = '#ffffff'
         plt.rcParams['figure.facecolor'] = '#ffffff'
 
-        # Renderizar layout conforme modelo
         if medidor_model == "MV145":
             self._setup_simplified_layout(data_frame, medidor_type, general_indicators)
         else:
             self._setup_complete_layout(
-                data_frame, medidor_type, flow_ranges_filtered, 
-                data_quality_filtered, hydraulic_status_filtered, general_indicators
+                data_frame,
+                medidor_type,
+                flow_ranges_filtered,
+                data_quality_filtered,
+                hydraulic_status_filtered,
+                process_status_filtered,
+                general_indicators
             )
 
     def _setup_simplified_layout(self, data_frame: pd.DataFrame, medidor_type: str, general_indicators: Dict[str, Any]) -> None:
@@ -143,29 +160,43 @@ class DashboardWindow(ctk.CTkToplevel):
 
         self._add_sidebar(data_frame, general_indicators)
 
-    def _setup_complete_layout(self, data_frame: pd.DataFrame, medidor_type: str, 
-                               flow_ranges: Dict[str, int], data_quality: Dict[str, int],
-                               hydraulic_status: Dict[str, int], general_indicators: Dict[str, Any]) -> None:
+    def _setup_complete_layout(
+        self,
+        data_frame: pd.DataFrame,
+        medidor_type: str,
+        flow_ranges: Dict[str, int],
+        data_quality: Dict[str, int],
+        hydraulic_status: Dict[str, int],
+        process_status: Dict[str, int],
+        general_indicators: Dict[str, Any]
+    ) -> None:
         """Layout completo com gráfico principal e roscas conforme configuração."""
         self.fig = plt.figure(figsize=(16, 10), dpi=100)
 
-        # Determinar layout do gridspec baseado no modelo
         num_pie_charts = len(self.model_config["pie_charts"])
         if num_pie_charts == 2:
-            gs = self.fig.add_gridspec(2, 2, height_ratios=[1.5, 1], hspace=0.6, wspace=0.3, 
-                                       top=0.82, bottom=0.15)
+            gs = self.fig.add_gridspec(
+                2, 2, height_ratios=[1.5, 1], hspace=0.6, wspace=0.3,
+                top=0.82, bottom=0.15
+            )
         elif num_pie_charts == 3:
-            gs = self.fig.add_gridspec(2, 3, height_ratios=[1.5, 1], hspace=0.6, wspace=0.4, 
-                                       top=0.82, bottom=0.15)
+            gs = self.fig.add_gridspec(
+                2, 3, height_ratios=[1.5, 1], hspace=0.6, wspace=0.4,
+                top=0.82, bottom=0.15
+            )
+        elif num_pie_charts == 4:
+            gs = self.fig.add_gridspec(
+                2, 4, height_ratios=[1.5, 1], hspace=0.6, wspace=0.4,
+                top=0.82, bottom=0.15
+            )
         else:
             gs = self.fig.add_gridspec(1, 1, top=0.82, bottom=0.15)
 
-        # Gráfico principal (Vazão e Velocidade)
         self.ax_flow_speed = self.fig.add_subplot(gs[0, :])
         self.ax_speed_twin = self.ax_flow_speed.twinx()
 
         self.ax_flow_speed.set_zorder(self.ax_speed_twin.get_zorder() + 1)
-        self.ax_flow_speed.set_frame_on(False) 
+        self.ax_flow_speed.set_frame_on(False)
         for spine in self.ax_flow_speed.spines.values():
             spine.set_zorder(0)
 
@@ -175,61 +206,108 @@ class DashboardWindow(ctk.CTkToplevel):
         self.ax_flow_speed.yaxis.set_major_formatter(FuncFormatter(format_mil))
         self.ax_flow_speed.set_ylabel("Vazão (m³/h)", color=COR_VAZAO, fontsize=12, fontweight='bold')
         self.ax_speed_twin.set_ylabel("Velocidade (m/s)", color=COR_VELOCIDADE, fontsize=12, fontweight='bold')
-        self.ax_flow_speed.set_title(f"MONITORAMENTO DE VAZÃO E VELOCIDADE - {medidor_type} ({self.medidor_model})", 
-                                     fontsize=18, fontweight='bold', pad=55)
+        self.ax_flow_speed.set_title(
+            f"MONITORAMENTO DE VAZÃO E VELOCIDADE - {medidor_type} ({self.medidor_model})",
+            fontsize=18, fontweight='bold', pad=55
+        )
         self.ax_flow_speed.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
 
         self.ax_flow_speed.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
         max_flow = data_frame['Vazao'].max() if not data_frame['Vazao'].empty else 1.0
-        max_speed = data_frame['Velocidade'].max() if 'Velocidade' in data_frame.columns and not data_frame['Velocidade'].empty else 1.0
-        self.ax_flow_speed.set_ylim(0, max_flow * 1.3) 
-        self.ax_speed_twin.set_ylim(0, max_speed * 2.8) 
+        max_speed = (
+            data_frame['Velocidade'].max()
+            if 'Velocidade' in data_frame.columns and not data_frame['Velocidade'].empty
+            else 1.0
+        )
+        self.ax_flow_speed.set_ylim(0, max_flow * 1.3)
+        self.ax_speed_twin.set_ylim(0, max_speed * 2.8)
 
-        self.line_flow, = self.ax_flow_speed.plot(data_frame['Data'], data_frame['Vazao'], 
-                                                   label='VAZÃO', color=COR_VAZAO, lw=1.0)
-        self.ax_flow_speed.fill_between(data_frame['Data'], data_frame['Vazao'], color=COR_VAZAO, alpha=0.08)
-        self.line_speed, = self.ax_speed_twin.plot(data_frame['Data'], data_frame['Velocidade'], 
-                                                    label='VELOCIDADE', color=COR_VELOCIDADE, lw=0.8, linestyle='--')
+        self.line_flow, = self.ax_flow_speed.plot(
+            data_frame['Data'], data_frame['Vazao'],
+            label='VAZÃO', color=COR_VAZAO, lw=1.0
+        )
+        self.ax_flow_speed.fill_between(
+            data_frame['Data'], data_frame['Vazao'], color=COR_VAZAO, alpha=0.08
+        )
+        self.line_speed, = self.ax_speed_twin.plot(
+            data_frame['Data'], data_frame['Velocidade'],
+            label='VELOCIDADE', color=COR_VELOCIDADE, lw=0.8, linestyle='--'
+        )
 
         mean_flow_value = data_frame['Vazao'].mean()
-        self.ax_flow_speed.axhline(y=mean_flow_value, color='green', linestyle=':',lw=1.5,alpha=0.7,
-                                   label=f'MÉDIA({mean_flow_value:,.2f})')
+        self.ax_flow_speed.axhline(
+            y=mean_flow_value,
+            color='green',
+            linestyle=':',
+            lw=1.5,
+            alpha=0.7,
+            label=f'MÉDIA ({mean_flow_value:,.2f})'
+        )
 
         lines1, labels1 = self.ax_flow_speed.get_legend_handles_labels()
         lines2, labels2 = self.ax_speed_twin.get_legend_handles_labels()
-        self.main_legend = self.ax_flow_speed.legend(lines1 + lines2, labels1 + labels2, 
-                                                     loc='upper center', bbox_to_anchor=(0.5, 1.18), 
-                                                     ncol=3, frameon=False, fontsize=10)
+        self.main_legend = self.ax_flow_speed.legend(
+            lines1 + lines2,
+            labels1 + labels2,
+            loc='upper center',
+            bbox_to_anchor=(0.5, 1.18),
+            ncol=3,
+            frameon=False,
+            fontsize=10
+        )
 
         self.ax_flow_speed.grid(True, axis='y', linestyle=':', alpha=0.3)
 
-        self.vertical_line = self.ax_flow_speed.axvline(x=data_frame['Data'].iloc[0], 
-                                                        color='#333333', alpha=0.3, lw=0.8, visible=False, zorder=5)
-        self.annotation_line = self.ax_flow_speed.annotate("", xy=(0,0), xytext=(20,35), 
-                                                            textcoords="offset points",
-                                                            bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
-                                                            zorder=100, visible=False, clip_on=False)
+        self.vertical_line = self.ax_flow_speed.axvline(
+            x=data_frame['Data'].iloc[0],
+            color='#333333', alpha=0.3, lw=0.8, visible=False, zorder=5
+        )
+        self.annotation_line = self.ax_flow_speed.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(20, 35),
+            textcoords="offset points",
+            bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
+            zorder=100,
+            visible=False,
+            clip_on=False
+        )
 
-        self.annotation_pie = self.fig.text(0, 0, "", 
-                                            bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98), 
-                                            visible=False, zorder=101)
+        self.annotation_pie = self.fig.text(
+            0, 0, "",
+            bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
+            visible=False,
+            zorder=101
+        )
 
         self.wedges_info_map: Dict[Any, Dict[str, Any]] = {}
 
-        # Criar roscas conforme configuração do modelo
         pie_configs = []
         col_idx = 0
 
         if "vazao" in self.model_config["pie_charts"]:
-            pie_configs.append((flow_ranges, "Percentual por Faixa de Vazão", (1, col_idx), "vazao"))
+            pie_configs.append(
+                (flow_ranges, "Percentual por Faixa de Vazão", (1, col_idx), "vazao")
+            )
             col_idx += 1
 
         if "qualidade" in self.model_config["pie_charts"]:
-            pie_configs.append((data_quality, "Qualidade da Integridade dos Dados", (1, col_idx), "qualidade"))
+            pie_configs.append(
+                (data_quality, "Qualidade da Integridade dos Dados", (1, col_idx), "qualidade")
+            )
+            col_idx += 1
+
+        if "status_process" in self.model_config["pie_charts"]:
+            pie_configs.append(
+                (process_status, "Status de Processo", (1, col_idx), "status_process")
+            )
             col_idx += 1
 
         if "status_hidraulico" in self.model_config["pie_charts"]:
-            pie_configs.append((hydraulic_status, "Status de Processo", (1, col_idx), "status_hidraulico"))
+            pie_configs.append(
+                (hydraulic_status, "Status Hidráulico", (1, col_idx), "status_hidraulico")
+            )
+            col_idx += 1
 
         for data_dict, title, grid_pos, chart_type in pie_configs:
             self._create_pie_chart(self.fig, gs, data_dict, title, grid_pos, chart_type)

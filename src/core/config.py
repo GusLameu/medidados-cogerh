@@ -4,7 +4,7 @@ Configurações e Constantes do Sistema
 
 # Mapeamento de colunas original -> padrão do sistema
 MAPA_COLUNAS = {
-    "MV110":   {"E3TIMESTAMP": "Data", "TOTALIZADO": "Total", "TENSAOE1_QUALITY": "Qualidade", "VAZAO": "Vazao", "FLOWSPEED": "Velocidade"},
+    "MV110":   {"E3TIMESTAMP": "Data", "TOTALIZADO": "Total", "TENSAOE1_QUALITY": "Qualidade", "VAZAO": "Vazao", "FLOWSPEED": "Velocidade", "PROCESS": "Process"},
     "MV145":   {"DATA_DISPOSITIVO": "Data", "VAZAO": "Vazao", "VOLUME":"Volume"},
     "XMT1000": {"E3TIMESTAMP": "Data", "TOTAL_POS": "Total", "VELOCIDADE_SOM_QUALITY": "Qualidade", "VAZAO": "Vazao", "VELOCIDADE": "Velocidade"},
     "NF550":   {"E3TIMESTAMP": "Data", "TOTALIZADO": "Total", "VELOCIDADE_SOM_QUALITY": "Qualidade", "VAZAO": "Vazao", "VELOCIDADE": "Velocidade","QUALIDADE_HIDRAULICA":"QHidraulica"},
@@ -52,16 +52,23 @@ PIE_COLORS = {
             "= 100": COR_STATUS_BOM
         },
         "default": CORES_ROSCA
+    },
+    "status_process": {
+        "patterns":{
+            "8192": COR_STATUS_RUIM,
+            "4096": COR_STATUS_MEDIO,
+            "0": COR_STATUS_BOM
+        },
+        "default": CORES_ROSCA
     }
 }
-
 MODELO_CONFIG = {
     "MV110": {
         "layout": "completo",
         "show_flow_speed_graph": True,
         "show_pie_charts": True,
-        "pie_charts": ["vazao", "qualidade"],
-        "show_status_process": False
+        "pie_charts": ["vazao", "qualidade", "status_process"],
+        "show_status_process": True
     },
     "MV145": {
         "layout": "simplificado",
