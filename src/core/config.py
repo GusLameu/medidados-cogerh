@@ -38,7 +38,8 @@ MAPA_COLUNAS = {
         "VELOCIDADE_SOM_QUALITY": "Qualidade",
         "VAZAO": "Vazao",
         "VELOCIDADE": "Velocidade",
-        "QUALIDADE_HIDRAULICA": "QHidraulica"
+        "QUALIDADE_HIDRAULICA": "QHidraulica",
+        "QUALIDADE_TRIGGER": "QualidadeTrigger"
     },
     "AT600": {
         "E3TIMESTAMP": "Data",
@@ -95,7 +96,15 @@ PIE_COLORS = {
             "0": COR_STATUS_BOM
         },
         "default": CORES_ROSCA
-    }
+    },
+    "qualidade_trigger": {
+        "patterns": {
+            "<60%": COR_STATUS_RUIM,
+            "60-80%": COR_STATUS_MEDIO,
+            ">80%": COR_STATUS_BOM
+        },
+        "default": CORES_ROSCA
+    },
 }
 
 MODELO_CONFIG = {
@@ -131,7 +140,7 @@ MODELO_CONFIG = {
         "layout": "completo",
         "show_flow_speed_graph": True,
         "show_pie_charts": True,
-        "pie_charts": ["vazao", "qualidade", "status_hidraulico"],
+        "pie_charts": ["vazao", "qualidade", "status_hidraulico", "qualidade_trigger"],
         "show_status_process": True
     },
     "AT600": {
