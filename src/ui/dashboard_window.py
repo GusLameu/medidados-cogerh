@@ -75,6 +75,13 @@ class DashboardWindow(ctk.CTkToplevel):
             )
             hydraulic_status_filtered = {k: v for k, v in hydraulic_status_raw.items() if v > 0}
 
+            trigger_quality_raw = (
+                DataProcessingService.calculate_hydraulic_status(data_frame)
+                if "status_hidraulico" in self.model_config["pie_charts"]
+                else {}
+            )
+            trigger_quality_filtered = {k: v for k, v in trigger_quality_raw.items() if v > 0}
+
             process_status_raw = (
                 DataProcessingService.calculate_process_status(data_frame)
                 if "status_process" in self.model_config["pie_charts"]
@@ -87,6 +94,7 @@ class DashboardWindow(ctk.CTkToplevel):
 
         if medidor_model == "MV145":
             self._setup_simplified_layout(data_frame, medidor_type, general_indicators)
+
         else:
             self._setup_complete_layout(
                 data_frame,
@@ -94,9 +102,11 @@ class DashboardWindow(ctk.CTkToplevel):
                 flow_ranges_filtered,
                 data_quality_filtered,
                 hydraulic_status_filtered,
+                trigger_quality_filtered,
                 process_status_filtered,
                 general_indicators
             )
+
     def _setup_simplified_layout(self, data_frame: pd.DataFrame, medidor_type: str, general_indicators: Dict[str, Any]) -> None:
         """Layout simplificado apenas com gráfico de vazão e volume (MV145)."""
         self.fig = plt.figure(figsize=(16, 8), dpi=100)
