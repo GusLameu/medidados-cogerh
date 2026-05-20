@@ -119,7 +119,7 @@ class DataProcessingService:
                 "Verifique o arquivo e o mapeamento do modelo."
             )
 
-        numeric_cols = ['Vazao', 'Velocidade', 'Total', 'Qualidade', 'QHidraulica', 'Process']
+        numeric_cols = ['Vazao', 'Velocidade', 'Total', 'Qualidade', 'QHidraulica', 'Process', 'QualidadeTrigger']
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -237,3 +237,33 @@ class DataProcessingService:
             process_status[label] = int(value)
 
         return {k: v for k, v in process_status.items() if v > 0}
+    
+    @staticmethod
+    def calculate_trigger_quality_status(data_frame: pd.DataFrame) -> Dict[str, int]:
+        """
+        Calcula a distribuição da coluna QualidadeTrigger para exibição em gráfico de rosca.
+        
+        Args:
+            data_drame: o DataFrame pandas com os dados do medidor já processados.
+        
+        Returns:
+            Um dicionário com a contagem de cada categoria presente na coluna QualidadeTrigger.
+        """
+        if 'QualidadeTrigger' not in data_frame.columns:
+            return {}
+        
+        trigger_counts = data_frame['QualidadeTrigger'].value_counts(dropna=False)
+
+        trigger_status: Dict[str, int] = {}
+        for key, value in trigger_counts.items():
+            if pd.isna(key):
+                label = "Sem Informação"
+            else:
+                if isinstance(key, float) and key.is_integer():
+                    label = f"Trigger {int(key)}%"
+                else:
+                    label = f"Trigger {key}%"
+            
+            trigger_status[label] = int(value)
+        
+        return {k: v for k, v in trigger_status.items() if v > 0}
