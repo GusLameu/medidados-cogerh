@@ -176,6 +176,7 @@ class DashboardWindow(ctk.CTkToplevel):
         flow_ranges: Dict[str, int],
         data_quality: Dict[str, int],
         hydraulic_status: Dict[str, int],
+        trigger_quality: Dict[str,int],
         process_status: Dict[str, int],
         general_indicators: Dict[str, Any]
     ) -> None:
@@ -315,6 +316,12 @@ class DashboardWindow(ctk.CTkToplevel):
         if "status_hidraulico" in self.model_config["pie_charts"]:
             pie_configs.append(
                 (hydraulic_status, "Status Hidráulico", (1, col_idx), "status_hidraulico")
+            )
+            col_idx += 1
+
+        if "qualidade_trigger" in self.model_config["pie_charts"]:
+            pie_configs.append(
+                (trigger_quality, "Trigger", (1, col_idx), "qualidade_trigger")
             )
             col_idx += 1
 
