@@ -240,30 +240,15 @@ class DataProcessingService:
     
     @staticmethod
     def calculate_trigger_quality_status(data_frame: pd.DataFrame) -> Dict[str, int]:
-        """
-        Calcula a distribuição da coluna QualidadeTrigger para exibição em gráfico de rosca.
-        
-        Args:
-            data_drame: o DataFrame pandas com os dados do medidor já processados.
-        
-        Returns:
-            Um dicionário com a contagem de cada categoria presente na coluna QualidadeTrigger.
-        """
         if 'QualidadeTrigger' not in data_frame.columns:
             return {}
-        
-        trigger_counts = data_frame['QualidadeTrigger'].value_counts(dropna=False)
 
-        trigger_status: Dict[str, int] = {}
-        for key, value in trigger_counts.items():
-            if pd.isna(key):
-                label = "Sem Informação"
-            else:
-                if isinstance(key, float) and key.is_integer():
-                    label = f"Trigger {int(key)}%"
-                else:
-                    label = f"Trigger {key}%"
-            
-            trigger_status[label] = int(value)
-        
+        trigger_series = pd.to_numeric(data_frame['QualidadeTrigger'], errors='coerce')
+
+        trigger_status: Dict[str, int] = {
+            "< 60%": int((trigger_series < 60).sum()),
+            "60 - 80%": int(((trigger_series >= 60) & (trigger_series <= 80)).sum()),
+            "> 80%": int((trigger_series > 80).sum())
+        }
+
         return {k: v for k, v in trigger_status.items() if v > 0}

@@ -99,9 +99,9 @@ PIE_COLORS = {
     },
     "qualidade_trigger": {
         "patterns": {
-            "<60%": COR_STATUS_RUIM,
-            "60-80%": COR_STATUS_MEDIO,
-            ">80%": COR_STATUS_BOM
+            "< 60%": COR_STATUS_RUIM,
+            "60 - 80%": COR_STATUS_MEDIO,
+            "> 80%": COR_STATUS_BOM
         },
         "default": CORES_ROSCA
     },
