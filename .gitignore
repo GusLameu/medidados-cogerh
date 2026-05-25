@@ -12,4 +12,4 @@ medidados.spec
 **/__init__.py
 
 #ignorar sensive data
-config.py
+**/config.py
