@@ -90,6 +90,7 @@ class DataProcessingService:
         Raises:
             Exception: Se ocorrer um erro durante o processamento.
         """
+        print("INICIO PROCESSAMENTO:", medidor_model)
         df = DataProcessingService._load_raw_data(file_path)
 
         df.columns = [str(col).strip() for col in df.columns]
@@ -124,6 +125,7 @@ class DataProcessingService:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
+        print("DF COLS:", df.columns.tolist())
         return df
 
     @staticmethod
@@ -157,7 +159,8 @@ class DataProcessingService:
         if 'Qualidade' in data_frame.columns:
             quality_counts = data_frame['Qualidade'].value_counts()
             data_quality: Dict[str, int] = {
-                f"Cod. {int(k)}": int(v) for k, v in quality_counts.items()
+                f"sinal {'bom' if int(k) == 192 else 'ruim'}: {int(k)}": int(v)
+                for k, v in quality_counts.items()
             }
         else:
             data_quality = {}
@@ -250,5 +253,10 @@ class DataProcessingService:
             "60 - 80%": int(((trigger_series >= 60) & (trigger_series <= 80)).sum()),
             "> 80%": int((trigger_series > 80).sum())
         }
+
+        print("QUALIDADE_TRIGGER COL:", data_frame["QualidadeTrigger"].head())
+        print("QUALIDADE_TRIGGER DTYPE:", data_frame["QualidadeTrigger"].dtype)
+        print("TRIGGER SERIES HEAD:", trigger_series.head())
+        print("TRIGGER STATUS:", trigger_status)
 
         return {k: v for k, v in trigger_status.items() if v > 0}

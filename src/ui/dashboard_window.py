@@ -76,7 +76,7 @@ class DashboardWindow(ctk.CTkToplevel):
             hydraulic_status_filtered = {k: v for k, v in hydraulic_status_raw.items() if v > 0}
 
             trigger_quality_raw = (
-                DataProcessingService.calculate_hydraulic_status(data_frame)
+                DataProcessingService.calculate_trigger_quality_status(data_frame)
                 if "status_hidraulico" in self.model_config["pie_charts"]
                 else {}
             )
@@ -352,13 +352,16 @@ class DashboardWindow(ctk.CTkToplevel):
         current_colors = []
         for label in labels:
             color_assigned = False
+            normalized_label = str(label).replace(" ", "").lower()
+
             for pattern, color in patterns.items():
-                if pattern in label:
+                normalized_pattern = str(pattern).replace(" ", "").lower()
+                if normalized_pattern in normalized_label:
                     current_colors.append(color)
                     color_assigned = True
                     break
+
             if not color_assigned:
-                # Usa uma cor da lista default rotativa baseada no índice atual
                 current_colors.append(default_colors[len(current_colors) % len(default_colors)])
 
         wedges, _ = ax.pie(values, startangle=90, colors=current_colors, 

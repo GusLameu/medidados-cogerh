@@ -56,11 +56,11 @@ COR_VELOCIDADE = '#D32F2F'
 COR_TEXTO = '#333333'
 COR_FUNDO_DROP = "#F0F8FF"
 CORES_ROSCA = [
+    '#D32F2F', # vermelho (negativo)
+    "#9E9E9E",  # cinza (zero)
     '#0047AB', # azul (faixa normal)
     '#FFC107', # amarelo (acima da média)
-    '#D32F2F', # vermelho (negativo)
     '#DA6314', # laranja
-    "#9E9E9E"  # cinza (zero)
     ]
 
 COR_STATUS_RUIM = '#D32F2F'      # Vermelho - QHidraulica < 90
@@ -78,30 +78,35 @@ PIE_COLORS = {
         "default": CORES_ROSCA
     },
     "qualidade": {
-        "patterns": {},
+        "patterns": {
+            "sinal ruim: 20": '#D32F2F',
+            "sinal ruim: 24": '#FFC107',
+            "sinal ruim: 28": '#DA6314',
+            "sinal bom: 192": '#0047AB'
+        },
         "default": CORES_ROSCA
     },
     "status_hidraulico": {
         "patterns": {
-            "< 90": COR_STATUS_RUIM,
-            "90-99": COR_STATUS_MEDIO,
-            "= 100": COR_STATUS_BOM
+            "< 90 (Ruim)": COR_STATUS_RUIM,
+            "90-99 (Médio)": COR_STATUS_MEDIO,
+            "= 100 (Bom)": COR_STATUS_BOM
         },
         "default": CORES_ROSCA
     },
     "status_process": {
         "patterns": {
-            "8192": COR_STATUS_RUIM,
-            "4096": COR_STATUS_MEDIO,
-            "0": COR_STATUS_BOM
+            "8192 (Ruim)": COR_STATUS_RUIM,
+            "4096 (Médio)": COR_STATUS_MEDIO,
+            "0 (Bom)": COR_STATUS_BOM
         },
         "default": CORES_ROSCA
     },
     "qualidade_trigger": {
         "patterns": {
-            "< 60%": COR_STATUS_RUIM,
-            "60 - 80%": COR_STATUS_MEDIO,
-            "> 80%": COR_STATUS_BOM
+            "< 60% (Ruim)": COR_STATUS_RUIM,
+            "60 - 80% (Médio)": COR_STATUS_MEDIO,
+            "> 80% (Bom)": COR_STATUS_BOM
         },
         "default": CORES_ROSCA
     },
