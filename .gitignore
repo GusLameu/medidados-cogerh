@@ -10,3 +10,6 @@ medidados.spec
 
 #ignorar os inits
 **/__init__.py
+
+#ignorar sensive data
+config.py
