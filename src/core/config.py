@@ -39,7 +39,9 @@ MAPA_COLUNAS = {
         "VAZAO": "Vazao",
         "VELOCIDADE": "Velocidade",
         "QUALIDADE_HIDRAULICA": "QHidraulica",
-        "QUALIDADE_TRIGGER": "QualidadeTrigger"
+        "QUALIDADE_TRIGGER": "QualidadeTrigger",
+        "AREA": "Area",
+        "NIVEL": "Nivel"
     },
     "AT600": {
         "E3TIMESTAMP": "Data",
@@ -53,6 +55,8 @@ MAPA_COLUNAS = {
 # Configurações Visuais (UI/Dashboard)
 COR_VAZAO = '#0047AB'      
 COR_VELOCIDADE = '#D32F2F' 
+COR_NIVEL = '#2E7D32'
+COR_AREA = '#DA6314'
 COR_TEXTO = '#333333'
 COR_FUNDO_DROP = "#F0F8FF"
 CORES_ROSCA = [

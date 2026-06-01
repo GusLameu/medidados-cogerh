@@ -19,6 +19,7 @@ from src.core.config import (
     MODELO_CONFIG,
     PIE_COLORS
 )
+from src.ui.detailed_dashboard_window import DetailedDashboardWindow
 
 class DashboardWindow(ctk.CTkToplevel):
     """
@@ -330,6 +331,22 @@ class DashboardWindow(ctk.CTkToplevel):
 
         self.container_frame = ctk.CTkFrame(self, fg_color="white")
         self.container_frame.pack(fill="both", expand=True, padx=20)
+
+        if self.medidor_model == "NF750" and 'Area' in data_frame.columns and 'Nivel' in data_frame.columns:
+            left_panel = ctk.CTkFrame(self.container_frame, fg_color="#f0f0f0", corner_radius=15, width=120)
+            left_panel.pack(side="left", fill="y", padx=(0, 10), pady=20)
+            left_panel.pack_propagate(False)
+
+            btn_detalhar = ctk.CTkButton(
+                left_panel,
+                text="Detalhar",
+                command=self._open_detailed_dashboard,
+                fg_color=COR_VAZAO,
+                height=45,
+                font=("Arial", 12, "bold")
+            )
+            btn_detalhar.pack(pady=(20, 10), padx=10, fill="x")
+
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
         self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
 
@@ -539,6 +556,16 @@ class DashboardWindow(ctk.CTkToplevel):
                     self.canvas.restore_region(self._background_cache)
                 self._redraw_static_elements()
                 self.canvas.blit(self.fig.bbox)
+
+    def _open_detailed_dashboard(self) -> None:
+        """Abre a janela de dashboard detalhado com gráficos de Vazão, Velocidade, Nível e Área."""
+        medidor_type = self.title().replace("Medidados - Dashboard: ", "").split(" (")[0] if "Dashboard: " in self.title() else self.medidor_model
+        DetailedDashboardWindow(
+            parent=self,
+            data_frame=self.data_frame,
+            medidor_model=self.medidor_model,
+            medidor_type=medidor_type
+        )
 
     def _return_to_import(self) -> None:
         """Fecha a janela do dashboard e retorna para a janela principal de importação."""

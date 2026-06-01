@@ -120,7 +120,7 @@ class DataProcessingService:
                 "Verifique o arquivo e o mapeamento do modelo."
             )
 
-        numeric_cols = ['Vazao', 'Velocidade', 'Total', 'Qualidade', 'QHidraulica', 'Process', 'QualidadeTrigger']
+        numeric_cols = ['Vazao', 'Velocidade', 'Total', 'Qualidade', 'QHidraulica', 'Process', 'QualidadeTrigger', 'Area', 'Nivel']
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
