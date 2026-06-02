@@ -4,6 +4,7 @@ Exibe gráficos de Vazão, Velocidade, Nível e Área.
 """
 import pandas as pd
 import customtkinter as ctk
+from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -39,6 +40,8 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
         self._background_cache: Optional[Any] = None
         self.state('zoomed')
         self.configure(fg_color="white")
+        self.attributes('-topmost', True)
+        self.after(200, lambda: self.attributes('-topmost', False))
 
         try:
             self.after(200, lambda: self.iconbitmap(resource_path("logo.ico")))
@@ -67,10 +70,22 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
         self._plot_nivel(data_frame)
         self._plot_area(data_frame)
 
+        self._setup_hover_elements(data_frame)
+
         self.container_frame = ctk.CTkFrame(self, fg_color="white")
-        self.container_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        self.container_frame.pack(fill="both", expand=True, padx=10, pady=5)
+
+        top_bar = ctk.CTkFrame(self.container_frame, fg_color="white", height=45)
+        top_bar.pack(fill="x", pady=(0, 5))
+        top_bar.pack_propagate(False)
+
+        ctk.CTkButton(top_bar, text="← Fechar", command=self._return_to_dashboard,
+                      fg_color="#6c757d", height=35, width=100).pack(side="left", padx=5)
+        ctk.CTkButton(top_bar, text="Exportar Relatório", command=self._export_report,
+                      fg_color=COR_VAZAO, height=35).pack(side="right", padx=5)
+
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
-        self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
+        self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
         self.canvas.mpl_connect("motion_notify_event", self._on_hover)
         self.canvas.mpl_connect("draw_event", self._on_draw)
@@ -87,17 +102,19 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
             data_frame['Data'], data_frame['Vazao'],
             color=COR_VAZAO, alpha=0.1
         )
-        self.ax_vazao.set_title("VAZÃO", fontsize=14, fontweight='bold', color=COR_VAZAO)
+        self.ax_vazao.set_title("VAZÃO", fontsize=14, fontweight='bold', color=COR_VAZAO, pad=25)
         self.ax_vazao.set_ylabel("Vazão (m³/h)", color=COR_VAZAO, fontsize=11)
         self.ax_vazao.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
         self.ax_vazao.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
         self.ax_vazao.grid(True, axis='y', linestyle=':', alpha=0.3)
-        self.ax_vazao.legend(loc='upper right', frameon=False, fontsize=9)
 
         mean_val = data_frame['Vazao'].mean()
         self.ax_vazao.axhline(y=mean_val, color='green', linestyle=':', lw=1.2, alpha=0.7,
                              label=f'Média ({mean_val:,.2f})')
-        self.ax_vazao.legend(loc='upper right', frameon=False, fontsize=9)
+
+        lines_v, labels_v = self.ax_vazao.get_legend_handles_labels()
+        self.ax_vazao.legend(lines_v, labels_v, loc='upper center', bbox_to_anchor=(0.5, 1.0),
+                            ncol=2, frameon=False, fontsize=9)
 
     def _plot_velocidade(self, data_frame: pd.DataFrame) -> None:
         """Plota o gráfico de Velocidade em vermelho pontilhado."""
@@ -106,12 +123,13 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Velocidade'],
                 label='VELOCIDADE', color=COR_VELOCIDADE, lw=1.2, linestyle='--'
             )
-            self.ax_velocidade.set_title("VELOCIDADE", fontsize=14, fontweight='bold', color=COR_VELOCIDADE)
+            self.ax_velocidade.set_title("VELOCIDADE", fontsize=14, fontweight='bold', color=COR_VELOCIDADE, pad=25)
             self.ax_velocidade.set_ylabel("Velocidade (m/s)", color=COR_VELOCIDADE, fontsize=11)
             self.ax_velocidade.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_velocidade.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
             self.ax_velocidade.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_velocidade.legend(loc='upper right', frameon=False, fontsize=9)
+            self.ax_velocidade.legend(loc='upper center', bbox_to_anchor=(0.5, 1.0),
+                                     frameon=False, fontsize=9)
         else:
             self.ax_velocidade.text(0.5, 0.5, 'Dados de Velocidade\nNão Disponíveis',
                                    ha='center', va='center', fontsize=12, color='gray',
@@ -130,12 +148,13 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Nivel'],
                 color=COR_NIVEL, alpha=0.1
             )
-            self.ax_nivel.set_title("NÍVEL", fontsize=14, fontweight='bold', color=COR_NIVEL)
+            self.ax_nivel.set_title("NÍVEL", fontsize=14, fontweight='bold', color=COR_NIVEL, pad=25)
             self.ax_nivel.set_ylabel("Nível (m)", color=COR_NIVEL, fontsize=11)
             self.ax_nivel.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_nivel.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
             self.ax_nivel.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_nivel.legend(loc='upper right', frameon=False, fontsize=9)
+            self.ax_nivel.legend(loc='upper center', bbox_to_anchor=(0.5, 1.0),
+                               frameon=False, fontsize=9)
         else:
             self.ax_nivel.text(0.5, 0.5, 'Dados de Nível\nNão Disponíveis',
                               ha='center', va='center', fontsize=12, color='gray',
@@ -154,12 +173,13 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Area'],
                 color=COR_AREA, alpha=0.1
             )
-            self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA)
+            self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA, pad=25)
             self.ax_area.set_ylabel("Área (m²)", color=COR_AREA, fontsize=11)
             self.ax_area.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_area.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
             self.ax_area.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_area.legend(loc='upper right', frameon=False, fontsize=9)
+            self.ax_area.legend(loc='upper center', bbox_to_anchor=(0.5, 1.0),
+                              frameon=False, fontsize=9)
         else:
             self.ax_area.text(0.5, 0.5, 'Dados de Área\nNão Disponíveis',
                              ha='center', va='center', fontsize=12, color='gray',
@@ -167,10 +187,16 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
             self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA)
             self.line_area = None
 
+    def _export_report(self) -> None:
+        """Exporta o gráfico como PNG."""
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("Imagem PNG", "*.png")])
+        if file_path:
+            self.fig.savefig(file_path, dpi=300, bbox_inches='tight')
+
     def _add_info_panel(self, data_frame: pd.DataFrame, medidor_type: str) -> None:
         """Adiciona painel de informações na parte inferior."""
         info_frame = ctk.CTkFrame(self.container_frame, fg_color="#f0f0f0", corner_radius=10, height=60)
-        info_frame.pack(fill="x", padx=10, pady=(0, 10))
+        info_frame.pack(side="bottom", fill="x", padx=10, pady=(5, 10))
         info_frame.pack_propagate(False)
 
         info_text = (
@@ -182,10 +208,37 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
 
         ctk.CTkLabel(info_frame, text=info_text, font=("Arial", 12, "bold"), text_color="#333333").pack(expand=True)
 
+    def _setup_hover_elements(self, data_frame: pd.DataFrame) -> None:
+        """Cria linhas verticais e anotações para hover em cada subplot."""
+        ax_config = [
+            (self.ax_vazao, 'Vazao', COR_VAZAO),
+            (self.ax_velocidade, 'Velocidade', COR_VELOCIDADE),
+            (self.ax_nivel, 'Nivel', COR_NIVEL),
+            (self.ax_area, 'Area', COR_AREA),
+        ]
+
+        self._vert_lines = {}
+        self._annotations = {}
+        for ax, col, color in ax_config:
+            vl = ax.axvline(x=data_frame['Data'].iloc[0], color='#333333', alpha=0.3,
+                            lw=0.8, visible=False, zorder=5)
+            ann = ax.annotate("", xy=(0, 0), xytext=(15, 25), textcoords="offset points",
+                              bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
+                              zorder=100, visible=False, clip_on=False)
+            self._vert_lines[ax] = vl
+            self._annotations[ax] = ann
+
     def _on_hover(self, event: Any) -> None:
         """Manipulador para o movimento do mouse sobre os gráficos."""
         if event.inaxes is None:
-            if self._background_cache is not None:
+            any_visible = False
+            for vl in self._vert_lines.values():
+                if vl.get_visible():
+                    any_visible = True
+                    vl.set_visible(False)
+            for ann in self._annotations.values():
+                ann.set_visible(False)
+            if any_visible and self._background_cache is not None:
                 self.canvas.restore_region(self._background_cache)
                 self.canvas.blit(self.fig.bbox)
             self._last_hover_idx = None
@@ -210,12 +263,32 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                     self._last_hover_idx = idx
                     date_at, val = x_data.iloc[idx], y_data.iloc[idx]
 
-                    tooltip_text = f"DATA: {date_at.strftime('%d/%m/%Y %H:%M')}\n{label}: {val:,.2f} {unit}"
+                    for vl in self._vert_lines.values():
+                        vl.set_visible(False)
+                    for ann in self._annotations.values():
+                        ann.set_visible(False)
 
-                    event.inaxes.set_title(f"{label}", fontsize=14, fontweight='bold', color=color)
+                    vl = self._vert_lines[event.inaxes]
+                    ann = self._annotations[event.inaxes]
+                    vl.set_xdata([date_at, date_at])
+                    vl.set_visible(True)
+                    ann.xy = (date_at, val)
+                    ann.set_text(f"DATA: {date_at.strftime('%d/%m/%Y %H:%M')}\n{label}: {val:,.2f} {unit}")
+                    ann.set_visible(True)
+
+                    if self._background_cache is not None:
+                        self.canvas.restore_region(self._background_cache)
+                    event.inaxes.draw_artist(vl)
+                    event.inaxes.draw_artist(ann)
+                    self.canvas.blit(self.fig.bbox)
 
     def _on_draw(self, event: Any) -> None:
         """Manipulador para o desenho do canvas."""
+        if hasattr(self, '_vert_lines'):
+            for vl in self._vert_lines.values():
+                vl.set_visible(False)
+            for ann in self._annotations.values():
+                ann.set_visible(False)
         self._background_cache = self.canvas.copy_from_bbox(self.fig.bbox)
 
     def _return_to_dashboard(self) -> None:
