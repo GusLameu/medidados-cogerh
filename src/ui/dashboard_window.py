@@ -332,21 +332,6 @@ class DashboardWindow(ctk.CTkToplevel):
         self.container_frame = ctk.CTkFrame(self, fg_color="white")
         self.container_frame.pack(fill="both", expand=True, padx=20)
 
-        if self.medidor_model == "NF750" and 'Area' in data_frame.columns and 'Nivel' in data_frame.columns:
-            left_panel = ctk.CTkFrame(self.container_frame, fg_color="#f0f0f0", corner_radius=15, width=120)
-            left_panel.pack(side="left", fill="y", padx=(0, 10), pady=20)
-            left_panel.pack_propagate(False)
-
-            btn_detalhar = ctk.CTkButton(
-                left_panel,
-                text="Detalhar",
-                command=self._open_detailed_dashboard,
-                fg_color=COR_VAZAO,
-                height=45,
-                font=("Arial", 12, "bold")
-            )
-            btn_detalhar.pack(pady=(20, 10), padx=10, fill="x")
-
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
         self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
 
@@ -453,8 +438,12 @@ class DashboardWindow(ctk.CTkToplevel):
                 ctk.CTkLabel(sidebar_frame, text=f"{data_frame['Data'].min().strftime('%d/%m/%Y %H:%M')}\naté\n{data_frame['Data'].max().strftime('%d/%m/%Y %H:%M')}", 
                              font=("Arial", 12, "bold"), text_color="#000000").pack(pady=5)
 
+        if self.medidor_model == "NF750" and 'Area' in data_frame.columns and 'Nivel' in data_frame.columns:
+            ctk.CTkButton(sidebar_frame, text="Detalhar", command=self._open_detailed_dashboard, 
+                          fg_color=COR_VAZAO, height=45).pack(pady=(10, 10), padx=30, fill="x")
+
         ctk.CTkButton(sidebar_frame, text="Exportar Relatório", command=self._export_report, 
-                      fg_color=COR_VAZAO, height=45).pack(pady=(50, 10), padx=30, fill="x")
+                      fg_color=COR_VAZAO, height=45).pack(pady=(10, 10), padx=30, fill="x")
         ctk.CTkButton(sidebar_frame, text="Nova Importação", command=self._return_to_import, 
                       fg_color="#6c757d", height=45).pack(pady=10, padx=30, fill="x")
 
