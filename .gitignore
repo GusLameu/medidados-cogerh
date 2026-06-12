@@ -1,15 +1,25 @@
-#Dados locais
-Medidores-2026.xslx
+# Dados locais
 Medidores - 2026.xlsx
+Medidores-2026.xlsx
 logo.ico
-medidados.spec
 
-#cache do python
-**/__pycache__/
-*.pyc
+# Cache do Python
+__pycache__/
+*.py[cod]
 
-#ignorar os inits
-**/__init__.py
+# Ambientes virtuais
+.venv/
+venv/
+env/
 
-#ignorar sensive data
-**/config.py
+# Build / empacotamento
+build/
+dist/
+*.spec
+
+# Arquivos do sistema / IDE
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
