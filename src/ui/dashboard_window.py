@@ -11,6 +11,10 @@ from matplotlib.ticker import FuncFormatter
 import numpy as np
 import sys
 from typing import Optional, Dict, Any, Tuple, List
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 from src.services.data_processing import DataProcessingService
 from src.utils.helpers import resource_path
@@ -147,7 +151,7 @@ class DashboardWindow(ctk.CTkToplevel):
             self.main_legend = self.ax_flow_speed.legend(loc='upper center', bbox_to_anchor=(0.5, 1.08),
                                                          ncol=1, frameon=False, fontsize=10)
         if 'Volume' not in data_frame.columns:
-            print("Aviso: Coluna 'Volume' não encontrada nos dados. Gráfico de volume não será exibido.")
+                logger.warning("Aviso: Coluna 'Volume' não encontrada nos dados. Gráfico de volume não será exibido.")
 
         # Elementos de hover
         self.vertical_line = self.ax_flow_speed.axvline(x=data_frame['Data'].iloc[0],

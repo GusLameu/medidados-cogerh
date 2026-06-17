@@ -1,56 +1,24 @@
 """
 Configurações e Constantes do Sistema
 """
+import json
+from src.utils.helpers import resource_path
+from src.utils.logger import get_logger
 
-# Mapeamento de colunas original -> padrão do sistema
-MAPA_COLUNAS = {
-    "MV110": {
-        "E3TIMESTAMP": "Data",
-        "TOTALIZADO": "Total",
-        "TENSAOE1_QUALITY": "Qualidade",
-        "VAZAO": "Vazao",
-        "FLOWSPEED": "Velocidade",
-        "PROCESS": "Process"
-    },
-    "MV145": {
-        "DATA_DISPOSITIVO": "Data",
-        "VAZAO": "Vazao",
-        "VOLUME": "Volume"
-    },
-    "XMT1000": {
-        "E3TIMESTAMP": "Data",
-        "TOTAL_POS": "Total",
-        "VELOCIDADE_SOM_QUALITY": "Qualidade",
-        "VAZAO": "Vazao",
-        "VELOCIDADE": "Velocidade"
-    },
-    "NF550": {
-        "E3TIMESTAMP": "Data",
-        "TOTALIZADO": "Total",
-        "VELOCIDADE_SOM_QUALITY": "Qualidade",
-        "VAZAO": "Vazao",
-        "VELOCIDADE": "Velocidade",
-        "QUALIDADE_HIDRAULICA": "QHidraulica"
-    },
-    "NF750": {
-        "E3TIMESTAMP": "Data",
-        "TOTALIZADO": "Total",
-        "VELOCIDADE_SOM_QUALITY": "Qualidade",
-        "VAZAO": "Vazao",
-        "VELOCIDADE": "Velocidade",
-        "QUALIDADE_HIDRAULICA": "QHidraulica",
-        "QUALIDADE_TRIGGER": "QualidadeTrigger",
-        "AREA": "Area",
-        "NIVEL": "Nivel"
-    },
-    "AT600": {
-        "E3TIMESTAMP": "Data",
-        "TOTAL_POS": "Total",
-        "VELOCIDADE_SOM_QUALITY": "Qualidade",
-        "VAZAO": "Vazao",
-        "VELOCIDADE": "Velocidade"
-    }
-}
+logger = get_logger(__name__)
+
+# Mapeamento de colunas original -> padrão do sistema (carregado de arquivo externo)
+def _load_column_mappings():
+    try:
+        path = resource_path("src/core/column_mappings.json")
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        # Fallback básico para evitar que o app quebre se o arquivo sumir
+        logger.error(f"Erro ao carregar mapeamento de colunas: {e}")
+        return {}
+
+MAPA_COLUNAS = _load_column_mappings()
 
 # Configurações Visuais (UI/Dashboard)
 COR_VAZAO = '#0047AB'      
@@ -92,9 +60,9 @@ PIE_COLORS = {
     },
     "status_hidraulico": {
         "patterns": {
-            "< 90 (Ruim)": COR_STATUS_RUIM,
-            "90-99 (Médio)": COR_STATUS_MEDIO,
-            "= 100 (Bom)": COR_STATUS_BOM
+            "< 65 (Crítico)": COR_STATUS_RUIM,
+            "65-80 (Aceitavel)": COR_STATUS_MEDIO,
+            "> 80 (Excelente)": COR_STATUS_BOM
         },
         "default": CORES_ROSCA
     },
@@ -160,3 +128,4 @@ MODELO_CONFIG = {
         "show_status_process": False
     }
 }
+

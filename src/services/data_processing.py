@@ -5,6 +5,9 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, Tuple, List, Optional
 from src.core.config import MAPA_COLUNAS
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 class DataProcessingService:
     """
@@ -24,6 +27,7 @@ class DataProcessingService:
             ValueError: Se o formato do arquivo não for suportado.
             IOError: Se houver um erro ao ler o arquivo.
         """
+        logger.info(f"Carregando arquivo bruto: {file_path}")
         try:
             if file_path.endswith('.csv'):
                 df = pd.read_csv(file_path, sep=None, engine='python', encoding='utf-8-sig')
@@ -33,6 +37,7 @@ class DataProcessingService:
                 raise ValueError("Formato de arquivo não suportado. Use .csv, .xlsx ou .xls.")
             return df
         except Exception as e:
+            logger.error(f"Falha ao carregar arquivo '{file_path}': {e}")
             raise IOError(f"Erro ao carregar o arquivo '{file_path}': {e}")
 
     @staticmethod
@@ -45,6 +50,7 @@ class DataProcessingService:
         Returns:
             O número de série encontrado ou None se não for possível extrair.
         """
+        logger.debug(f"Tentando extrair número de série do arquivo: {file_path}")
         try:
             if file_path.endswith('.csv'):
                 with open(file_path, 'r', encoding='utf-8-sig') as f:
@@ -73,8 +79,10 @@ class DataProcessingService:
                 elif 'NUMERO_SERIE' in temp_df.columns:
                     return str(temp_df['NUMERO_SERIE'].iloc[0])
 
+            logger.warning(f"Número de série não encontrado no arquivo: {file_path}")
             return None
-        except Exception:
+        except Exception as e:
+            logger.error(f"Erro ao tentar extrair número de série de '{file_path}': {e}")
             return None
 
     @staticmethod
@@ -84,12 +92,13 @@ class DataProcessingService:
 
         Args:
             file_path: Caminho para o arquivo de dados (CSV ou Excel).
-            medidor_model: O modelo do medidor (ex: "MV110", "XMT1000") para mapeamento de colunas.
+            medidor_model: O modelo do medidor (ex: \"MV110\", \"XMT1000\") para mapeamento de colunas.
         Returns:
             Um DataFrame pandas processado.
         Raises:
             Exception: Se ocorrer um erro durante o processamento.
         """
+        logger.info(f"Iniciando processamento para o modelo {medidor_model} (arquivo: {file_path})")
         df = DataProcessingService._load_raw_data(file_path)
 
         df.columns = [str(col).strip() for col in df.columns]
@@ -105,26 +114,27 @@ class DataProcessingService:
 
         column_mapping = MAPA_COLUNAS.get(medidor_model, {})
         if not column_mapping:
+            logger.error(f"Mapeamento de colunas não encontrado para o modelo: {medidor_model}")
             raise ValueError(f"Mapeamento de colunas não encontrado para o modelo: {medidor_model}")
 
         df = df.rename(columns=column_mapping)
 
-        if 'Data' in df.columns:
-            df['Data'] = pd.to_datetime(df['Data'], dayfirst=True, errors='coerce')
-            df = df.dropna(subset=['Data'])
-            df = df.sort_values('Data')
-        else:
-            raise ValueError(
-                "Coluna de data ('Data') não encontrada após o mapeamento. "
-                "Verifique o arquivo e o mapeamento do modelo."
-            )
+        if 'Data' not in df.columns:
+            logger.error(f"Coluna de data ('Data') não encontrada após o mapeamento para o modelo {medidor_model}")
+            raise ValueError(f"Coluna de data ('Data') não encontrada após o mapeamento para o modelo {medidor_model}")
+
+        df['Data'] = pd.to_datetime(df['Data'], dayfirst=True, errors='coerce')
+        df = df.dropna(subset=['Data'])
+        df = df.sort_values('Data')
 
         numeric_cols = ['Vazao', 'Velocidade', 'Total', 'Qualidade', 'QHidraulica', 'Process', 'QualidadeTrigger', 'Area', 'Nivel']
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
+        logger.info(f"Processamento concluído para o modelo {medidor_model}. {len(df)} registros processados.")
         return df
+
 
     @staticmethod
     def calculate_dashboard_metrics(
@@ -141,6 +151,7 @@ class DataProcessingService:
             - qualidade_dados (Dict[str, int]): Contagem de códigos de qualidade.
             - indicadores_gerais (Dict[str, Any]): Indicadores como número de série, datas e total acumulado.
         """
+        logger.debug("Calculando métricas do dashboard")
         positive_flow_values = data_frame[data_frame['Vazao'] > 0]['Vazao']
         mean_flow = positive_flow_values.mean() if not positive_flow_values.empty else 0.0
         flow_limit = round(mean_flow, 1)
@@ -186,11 +197,6 @@ class DataProcessingService:
         """
         Calcula o status hidráulico baseado na coluna QHidraulica.
 
-        Categoriza os valores em:
-        - QHidraulica < 90: Ruim
-        - 90 <= QHidraulica < 100: Médio
-        - QHidraulica == 100: Bom
-
         Args:
             data_frame: O DataFrame pandas com os dados do medidor já processados.
         Returns:
@@ -200,11 +206,11 @@ class DataProcessingService:
             return {}
 
         status_counts: Dict[str, int] = {
-            "< 90 (Ruim)": int(len(data_frame[data_frame['QHidraulica'] < 90])),
-            "90-99 (Médio)": int(
-                len(data_frame[(data_frame['QHidraulica'] >= 90) & (data_frame['QHidraulica'] < 100)])
+            "< 65 (Crítico)": int(len(data_frame[data_frame['QHidraulica'] < 65])),
+            "65-80 (Aceitavel)": int(
+                len(data_frame[(data_frame['QHidraulica'] >= 65) & (data_frame['QHidraulica'] <= 80)])
             ),
-            "= 100 (Bom)": int(len(data_frame[data_frame['QHidraulica'] == 100]))
+            "> 80 (Excelente)": int(len(data_frame[data_frame['QHidraulica'] > 80]))
         }
 
         return {k: v for k, v in status_counts.items() if v > 0}
@@ -238,9 +244,18 @@ class DataProcessingService:
             process_status[label] = int(value)
 
         return {k: v for k, v in process_status.items() if v > 0}
-    
+
     @staticmethod
     def calculate_trigger_quality_status(data_frame: pd.DataFrame) -> Dict[str, int]:
+        """
+        Calcula o status da qualidade do trigger baseado na coluna QualidadeTrigger.
+
+        Args:
+            data_frame: O DataFrame pandas com os dados do medidor já processados.
+
+        Returns:
+            Um dicionário com a contagem de status de qualidade do trigger.
+        """
         if 'QualidadeTrigger' not in data_frame.columns:
             return {}
 
@@ -253,3 +268,4 @@ class DataProcessingService:
         }
 
         return {k: v for k, v in trigger_status.items() if v > 0}
+

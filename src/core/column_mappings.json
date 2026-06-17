@@ -1,0 +1,48 @@
+{
+    "MV110": {
+        "E3TIMESTAMP": "Data",
+        "TOTALIZADO": "Total",
+        "TENSAOE1_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "FLOWSPEED": "Velocidade",
+        "PROCESS": "Process"
+    },
+    "MV145": {
+        "DATA_DISPOSITIVO": "Data",
+        "VAZAO": "Vazao",
+        "VOLUME": "Volume"
+    },
+    "XMT1000": {
+        "E3TIMESTAMP": "Data",
+        "TOTAL_POS": "Total",
+        "VELOCIDADE_SOM_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "VELOCIDADE": "Velocidade"
+    },
+    "NF550": {
+        "E3TIMESTAMP": "Data",
+        "TOTALIZADO": "Total",
+        "VELOCIDADE_SOM_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "VELOCIDADE": "Velocidade",
+        "QUALIDADE_HIDRAULICA": "QHidraulica"
+    },
+    "NF750": {
+        "E3TIMESTAMP": "Data",
+        "TOTALIZADO": "Total",
+        "VELOCIDADE_SOM_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "VELOCIDADE": "Velocidade",
+        "QUALIDADE_HIDRAULICA": "QHidraulica",
+        "QUALIDADE_TRIGGER": "QualidadeTrigger",
+        "AREA": "Area",
+        "NIVEL": "Nivel"
+    },
+    "AT600": {
+        "E3TIMESTAMP": "Data",
+        "TOTAL_POS": "Total",
+        "VELOCIDADE_SOM_QUALITY": "Qualidade",
+        "VAZAO": "Vazao",
+        "VELOCIDADE": "Velocidade"
+    }
+}
