@@ -1,4 +1,4 @@
-# Medidados – Análise de Medidores de Vazão
+# Medidados V6 - Análise de Medidores de Vazão
 
 Aplicativo desktop em Python para análise técnica de medidores de vazão da COGERH, com leitura de arquivos CSV/Excel, cálculo de métricas de vazão e qualidade e visualização em dashboards interativos (gráficos de linha e roscas).
 
@@ -88,8 +88,8 @@ pyinstaller medidados.spec
 
 ## Status do projeto
 
-- Versão atual: v5.0 (branch `GusLameu-patch-5`).
-- Foco atual: Preparação do sistema para integração com o banco de dados.
+- **Versão atual:** v6.0
+- **Foco atual:** Melhorias de interface e estabilidade do sistema.
 
 ## Próximos passos (ideias)
 
