@@ -102,10 +102,11 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
             data_frame['Data'], data_frame['Vazao'],
             color=COR_VAZAO, alpha=0.1
         )
-        self.ax_vazao.set_title("VAZÃO", fontsize=14, fontweight='bold', color=COR_VAZAO, pad=25)
+        self.ax_vazao.set_title("VAZÃO", fontsize=14, fontweight='bold', color=COR_VAZAO, pad=50)
         self.ax_vazao.set_ylabel("Vazão (m³/h)", color=COR_VAZAO, fontsize=11)
         self.ax_vazao.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
         self.ax_vazao.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
+        self.ax_vazao.set_ylim(bottom=data_frame['Vazao'].min())
         self.ax_vazao.grid(True, axis='y', linestyle=':', alpha=0.3)
 
         mean_val = data_frame['Vazao'].mean()
@@ -113,7 +114,7 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                              label=f'Média ({mean_val:,.2f})')
 
         lines_v, labels_v = self.ax_vazao.get_legend_handles_labels()
-        self.ax_vazao.legend(lines_v, labels_v, loc='upper center', bbox_to_anchor=(0.5, 1.0),
+        self.ax_vazao.legend(lines_v, labels_v, loc='upper center', bbox_to_anchor=(0.5, 1.15),
                             ncol=2, frameon=False, fontsize=9)
 
     def _plot_velocidade(self, data_frame: pd.DataFrame) -> None:
@@ -123,12 +124,13 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Velocidade'],
                 label='VELOCIDADE', color=COR_VELOCIDADE, lw=1.2, linestyle='--'
             )
-            self.ax_velocidade.set_title("VELOCIDADE", fontsize=14, fontweight='bold', color=COR_VELOCIDADE, pad=25)
+            self.ax_velocidade.set_title("VELOCIDADE", fontsize=14, fontweight='bold', color=COR_VELOCIDADE, pad=50)
             self.ax_velocidade.set_ylabel("Velocidade (m/s)", color=COR_VELOCIDADE, fontsize=11)
             self.ax_velocidade.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_velocidade.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
+            self.ax_velocidade.set_ylim(bottom=data_frame['Velocidade'].min())
             self.ax_velocidade.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_velocidade.legend(loc='upper center', bbox_to_anchor=(0.5, 1.0),
+            self.ax_velocidade.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
                                      frameon=False, fontsize=9)
         else:
             self.ax_velocidade.text(0.5, 0.5, 'Dados de Velocidade\nNão Disponíveis',
@@ -148,12 +150,13 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Nivel'],
                 color=COR_NIVEL, alpha=0.1
             )
-            self.ax_nivel.set_title("NÍVEL", fontsize=14, fontweight='bold', color=COR_NIVEL, pad=25)
+            self.ax_nivel.set_title("NÍVEL", fontsize=14, fontweight='bold', color=COR_NIVEL, pad=50)
             self.ax_nivel.set_ylabel("Nível (m)", color=COR_NIVEL, fontsize=11)
             self.ax_nivel.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_nivel.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
+            self.ax_nivel.set_ylim(bottom=data_frame['Nivel'].min())
             self.ax_nivel.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_nivel.legend(loc='upper center', bbox_to_anchor=(0.5, 1.0),
+            self.ax_nivel.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
                                frameon=False, fontsize=9)
         else:
             self.ax_nivel.text(0.5, 0.5, 'Dados de Nível\nNão Disponíveis',
@@ -173,12 +176,13 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Area'],
                 color=COR_AREA, alpha=0.1
             )
-            self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA, pad=25)
+            self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA, pad=50)
             self.ax_area.set_ylabel("Área (m²)", color=COR_AREA, fontsize=11)
             self.ax_area.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_area.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
+            self.ax_area.set_ylim(bottom=data_frame['Area'].min())
             self.ax_area.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_area.legend(loc='upper center', bbox_to_anchor=(0.5, 1.0),
+            self.ax_area.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
                               frameon=False, fontsize=9)
         else:
             self.ax_area.text(0.5, 0.5, 'Dados de Área\nNão Disponíveis',
