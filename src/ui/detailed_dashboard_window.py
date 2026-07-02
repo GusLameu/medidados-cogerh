@@ -21,7 +21,7 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
     Janela de dashboard detalhado para o medidor NF750.
     Exibe gráficos de Vazão, Velocidade, Nível e Área.
     """
-    def __init__(self, parent: ctk.CTk, data_frame: pd.DataFrame, medidor_model: str, medidor_type: str):
+    def __init__(self, parent: ctk.CTk, data_frame: pd.DataFrame, medidor_model: str, medidor_type: str, unit: str = "m³/h"):
         """
         Inicializa a janela de dashboard detalhado.
 
@@ -41,6 +41,7 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
         self.state('zoomed')
         self.configure(fg_color="white")
         self.attributes('-topmost', True)
+        self.unit = unit
         self.after(200, lambda: self.attributes('-topmost', False))
 
         try:
@@ -249,7 +250,7 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
             return
 
         ax_map = {
-            self.ax_vazao: ('Vazao', 'VAZÃO', 'm³/h', COR_VAZAO),
+            self.ax_vazao: ('Vazao', 'VAZÃO', f'{self.unit}', COR_VAZAO),
             self.ax_velocidade: ('Velocidade', 'VELOCIDADE', 'm/s', COR_VELOCIDADE),
             self.ax_nivel: ('Nivel', 'NÍVEL', 'm', COR_NIVEL),
             self.ax_area: ('Area', 'ÁREA', 'm²', COR_AREA)

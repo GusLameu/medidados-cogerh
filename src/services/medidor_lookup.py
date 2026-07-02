@@ -37,19 +37,20 @@ class MedidorLookupService:
                 'Nº SÉRIE ELETRÔNICA': 'NUMERO_SERIE',
                 'MODELO ELETRÔNICA':   'MODELO',
                 'TIPO DE MEDIDOR':     'TIPO',
+                'LOCAL INSTALAÇÃO':    'LOCAL',
             }
             self._medidores_df.rename(columns=column_rename_map, inplace=True)
         except Exception as e:
             raise IOError(f"Erro ao carregar o arquivo de medidores '{os.path.basename(self._excel_path)}': {e}")
 
-    def get_medidor_info(self, serial_number: str) -> Optional[Tuple[str, str]]:
+    def get_medidor_info(self, serial_number: str) -> Optional[Tuple[str, str, str]]:
         """
-        Busca o tipo e modelo do medidor pelo número de série.
+        Busca o tipo, modelo e local de instalação do medidor pelo número de série.
 
         Args:
             serial_number: O número de série do medidor.
         Returns:
-            Uma tupla (tipo, modelo) se encontrado, caso contrário None.
+            Uma tupla (tipo, modelo, local) se encontrado, caso contrário None.
         """
         if self._medidores_df is None:
             self._load_medidores_data()
@@ -62,5 +63,6 @@ class MedidorLookupService:
         if not result.empty:
             tipo = str(result['TIPO'].iloc[0])
             modelo = str(result['MODELO'].iloc[0])
-            return tipo, modelo
+            local = str(result['LOCAL'].iloc[0])
+            return tipo, modelo, local
         return None

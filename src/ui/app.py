@@ -15,7 +15,9 @@ from src.services.data_processing import DataProcessingService
 from src.services.medidor_lookup import MedidorLookupService
 from src.utils.helpers import resource_path
 from src.ui.dashboard_window import DashboardWindow
-from src.core.config import COR_VAZAO, COR_FUNDO_DROP
+from src.ui.components.confirmation_dialog import ConfirmationDialog
+
+from src.core.config import COR_VAZAO, COR_FUNDO_DROP, MAPA_COLUNAS
 
 class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper): # Renamed from AppAnalise to App
     """
@@ -27,59 +29,57 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper): # Renamed from AppAnalise to A
         Inicializa a aplicação, configura a janela principal e os widgets.
         """
         super().__init__()
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
         self.TkdndVersion = TkinterDnD._require(self)
         self.title("Medidados")
         l, a = 600, 750
         x, y = (self.winfo_screenwidth()//2 - l//2), (self.winfo_screenheight()//2 - a//2)
         self.geometry(f"{l}x{a}+{x}+{y}")
-        self.configure(fg_color="white")
+        self.configure(fg_color="#F0F0F0")
         
         try: self.iconbitmap(resource_path("logo.ico"))
         except: pass
-
+        
         self.drop_target_register(DND_FILES)
         self.dnd_bind('<<Drop>>', self.soltar_arquivo)
-
+        
         ctk.CTkLabel(self, text="Medidados", font=("Arial", 32, "bold"), text_color=COR_VAZAO).pack(pady=(50, 5))
         ctk.CTkLabel(self, text="Sistema de Análise Técnica", font=("Arial", 14), text_color="gray").pack(pady=(0, 40))
-
+        
         self.btn_manual = ctk.CTkButton(self, text="BUSCAR ARQUIVO MANUALMENTE", command=self.run_manual, 
                                       height=55, width=380, font=("Arial", 14, "bold"), fg_color=COR_VAZAO)
         self.btn_manual.pack(pady=30)
-
+        
         self.frame_drop = ctk.CTkFrame(self, width=450, height=160, fg_color=COR_FUNDO_DROP, border_width=2, border_color=COR_VAZAO, corner_radius=20)
         self.frame_drop.pack(pady=10); self.frame_drop.pack_propagate(False)
         ctk.CTkLabel(self.frame_drop, text="ARRASTE O ARQUIVO AQUI\n(Excel ou CSV)", font=("Arial", 15, "bold"), text_color=COR_VAZAO).pack(expand=True)
-
-        ctk.CTkLabel(self, text="v6.0 | Medidados\nGustavo Lopes Lameu\nGEMED", font=("Arial", 10), text_color="gray").pack(side="bottom", pady=15)
-
+        
+        ctk.CTkLabel(self, text="v6.1 | Medidados\nGustavo Lopes Lameu\nGEMED", font=("Arial", 10), text_color="gray").pack(side="bottom", pady=15)
+        
         self.medidor_lookup_service = MedidorLookupService()
         self.data_processing_service = DataProcessingService()
-
+        
     def _set_processing_state(self, is_processing: bool) -> None:
         """
         Define o estado visual do botão de busca manual durante o processamento.
-
-        Args:
-            is_processing: True para estado de processamento, False para estado normal.
         """
-        self.btn_manual.configure(state="disabled" if is_processing else "normal",
-                                  text="PROCESSANDO DADOS..." if is_processing else "BUSCAR ARQUIVO MANUALMENTE")
-
+        # ✅ Verificar se a janela ainda existe
+        if self.winfo_exists():
+            self.btn_manual.configure(state="disabled" if is_processing else "normal",
+                                      text="PROCESSANDO DADOS..." if is_processing else "BUSCAR ARQUIVO MANUALMENTE")
+        
     def soltar_arquivo(self, event):
         filepath = event.data.strip('{}')
         self.processar_caminho(filepath)
-
+        
     def run_manual(self):
         p = filedialog.askopenfilename(filetypes=[("Arquivos de Dados", "*.csv *.xlsx *.xls")])
         if p: self.processar_caminho(p)
-
+        
     def processar_caminho(self, path):
         """
-        Inicia o processamento do arquivo em uma thread separada.
-
-        Args:
-            path: Caminho completo para o arquivo de dados.
+        Inicia a identificação do arquivo em uma thread separada.
         """
         self._set_processing_state(True)
         def tarefa_background():
@@ -88,38 +88,88 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper): # Renamed from AppAnalise to A
                 serial_number = self.data_processing_service.peek_serial_number(path)
                 if not serial_number:
                     raise ValueError("Não foi possível extrair o número de série do arquivo. Verifique o formato.")
-
-                # 2. Buscar informações do medidor (tipo e modelo)
+                
+                # 2. Buscar informações do medidor (tipo, modelo e local)
                 medidor_info = self.medidor_lookup_service.get_medidor_info(serial_number)
                 if not medidor_info:
                     raise ValueError(f"Número de série '{serial_number}' não encontrado na base de medidores. Verifique o arquivo 'Medidores - 2026.xlsx'.")
                 
-                medidor_type, medidor_model = medidor_info
-
-                # 3. Processar os dados completos com o modelo identificado
-                processed_df = self.data_processing_service.process_medidor_data(path, medidor_model)
+                medidor_type, medidor_model, medidor_local = medidor_info
                 
-                self.after(0, lambda: self._finalizar_carregamento(processed_df, medidor_model, medidor_type))
+                # 3. Calcular vazão média para exibição no popup
+                df_temp = self.data_processing_service._load_raw_data(path)
+                df_temp.columns = [str(col).strip().upper() for col in df_temp.columns]
+
+                
+                from src.utils.logger import get_logger
+                logger = get_logger(__name__)
+                logger.info(f"Colunas detectadas no arquivo: {df_temp.columns.tolist()}")
+                
+                column_mapping = MAPA_COLUNAS.get(medidor_model.strip().upper(), {})
+                if column_mapping:
+                    logger.info(f"Aplicando mapeamento para {medidor_model}: {column_mapping}")
+                    df_temp = df_temp.rename(columns=column_mapping)
+                
+                logger.info(f"Colunas após mapeamento: {df_temp.columns.tolist()}")
+
+                mean_flow = 0.0
+                if 'Vazao' in df_temp.columns:
+                    logger.info(f"Coluna 'Vazao' encontrada. Primeiros valores: {df_temp['Vazao'].head().tolist()}")
+                    vazao_col = pd.to_numeric(df_temp['Vazao'].astype(str).str.replace(',', '.'), errors='coerce')
+                    logger.info(f"Valores após conversão numérica: {vazao_col.head().tolist()}")
+                    positive_flow = vazao_col[vazao_col > 0]
+                    mean_flow = positive_flow.mean() if not positive_flow.empty else 0.0
+                    logger.info(f"Média de vazão positiva calculada: {mean_flow}")
+                else:
+                    logger.warning("Coluna 'Vazao' NÃO encontrada após o mapeamento!")
+
+                # 4. Chamar o popup de confirmação na thread principal
+                self.after(0, lambda: self._mostrar_confirmacao(path, medidor_type, medidor_model, medidor_local, mean_flow))
+
             except Exception as e:
                 self.after(0, lambda: messagebox.showerror("Erro", str(e)))
                 self.after(0, self._reset_interface)
         threading.Thread(target=tarefa_background, daemon=True).start()
 
-    def _finalizar_carregamento(self, data_frame: pd.DataFrame, medidor_model: str, medidor_type: str) -> None:
-        """
-        Finaliza o carregamento dos dados e abre a janela do dashboard.
 
-        Args:
-            data_frame: O DataFrame pandas processado.
-            medidor_model: O modelo do medidor.
-            medidor_type: O tipo do medidor.
+    def _mostrar_confirmacao(self, path, medidor_type, medidor_model, medidor_local, mean_flow):
+        dialog = ConfirmationDialog(self, medidor_type, medidor_model, medidor_local, mean_flow)
+        self.wait_window(dialog)
+        result = dialog.get_result()
+
+        if result and result[0]: # Confirmado
+            unit = result[1]
+            threading.Thread(target=self._tarefa_processamento_completo, 
+                             args=(path, medidor_model, medidor_type, unit), 
+                             daemon=True).start()
+        else:
+            self._reset_interface()
+
+    def _tarefa_processamento_completo(self, path, medidor_model, medidor_type, unit):
+        try:
+            # Processar os dados com a unidade escolhida
+            processed_df = self.data_processing_service.process_medidor_data(path, medidor_model, unit)
+            self.after(0, lambda: self._finalizar_carregamento(processed_df, medidor_model, medidor_type, unit))
+        except Exception as e:
+            self.after(0, lambda: messagebox.showerror("Erro no Processamento", str(e)))
+            self.after(0, self._reset_interface)
+
+    def _finalizar_carregamento(self, df: pd.DataFrame, medidor_model: str, medidor_type: str, unit: str) -> None:
+        """
+        Finaliza o carregamento e abre a janela do dashboard.
         """
         self.withdraw()
-        DashboardWindow(self, data_frame, medidor_model, medidor_type)
-        self._reset_interface()
+        dashboard = DashboardWindow(self, df, medidor_model, medidor_type, unit=unit)
+        self.wait_window(dashboard)
+        # ✅ Verificar se a janela pai ainda existe antes de tentar operar nela
+        if self.winfo_exists():
+            self.deiconify()
+            self._reset_interface()
 
     def _reset_interface(self) -> None:
         """
         Reseta a interface do usuário para o estado inicial após o processamento.
         """
-        self._set_processing_state(False)
+        # ✅ Verificar se a janela ainda existe antes de operar nela
+        if self.winfo_exists():
+            self._set_processing_state(False)

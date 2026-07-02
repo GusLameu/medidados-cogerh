@@ -86,7 +86,7 @@ class DataProcessingService:
             return None
 
     @staticmethod
-    def process_medidor_data(file_path: str, medidor_model: str) -> pd.DataFrame:
+    def process_medidor_data(file_path: str, medidor_model: str, unit: str = "m³/h") -> pd.DataFrame:
         """
         Carrega e processa os dados de um medidor, aplicando limpeza e transformações.
 
@@ -101,7 +101,7 @@ class DataProcessingService:
         logger.info(f"Iniciando processamento para o modelo {medidor_model} (arquivo: {file_path})")
         df = DataProcessingService._load_raw_data(file_path)
 
-        df.columns = [str(col).strip() for col in df.columns]
+        df.columns = [str(col).strip().upper() for col in df.columns]
 
         for col in df.columns:
             if df[col].dtype == 'object':
@@ -112,7 +112,7 @@ class DataProcessingService:
                     .str.replace(',', '.', regex=False)
                 )
 
-        column_mapping = MAPA_COLUNAS.get(medidor_model, {})
+        column_mapping = MAPA_COLUNAS.get(medidor_model.strip().upper(), {})
         if not column_mapping:
             logger.error(f"Mapeamento de colunas não encontrado para o modelo: {medidor_model}")
             raise ValueError(f"Mapeamento de colunas não encontrado para o modelo: {medidor_model}")
@@ -127,10 +127,17 @@ class DataProcessingService:
         df = df.dropna(subset=['Data'])
         df = df.sort_values('Data')
 
-        numeric_cols = ['Vazao', 'Velocidade', 'Total', 'Qualidade', 'QHidraulica', 'Process', 'QualidadeTrigger', 'Area', 'Nivel']
+        numeric_cols = ['Vazao', 'Velocidade', 'Total', 'Qualidade', 'Process', 'QualidadeTrigger', 'Area', 'Nivel', 'QHidraulica']
         for col in numeric_cols:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '.'), errors='coerce').fillna(0)
+
+        if 'Vazao' in df.columns:
+            if unit == "m³/s":
+                df['Vazao'] = df['Vazao'] / 3600
+            elif unit == "l/s":
+                df['Vazao'] = df['Vazao'] / 3.6
+
 
         logger.info(f"Processamento concluído para o modelo {medidor_model}. {len(df)} registros processados.")
         return df
@@ -259,7 +266,7 @@ class DataProcessingService:
         if 'QualidadeTrigger' not in data_frame.columns:
             return {}
 
-        trigger_series = pd.to_numeric(data_frame['QualidadeTrigger'], errors='coerce')
+        trigger_series = pd.to_numeric(data_frame['QualidadeTrigger'].astype(str).str.replace(',', '.'), errors='coerce')
 
         trigger_status: Dict[str, int] = {
             "< 60%": int((trigger_series < 60).sum()),

@@ -30,7 +30,7 @@ class DashboardWindow(ctk.CTkToplevel):
     Janela do dashboard que exibe gráficos de vazão/velocidade e métricas de qualidade.
     O layout varia conforme o modelo do medidor.
     """
-    def __init__(self, parent: ctk.CTk, data_frame: pd.DataFrame, medidor_model: str, medidor_type: str):
+    def __init__(self, parent: ctk.CTk, data_frame: pd.DataFrame, medidor_model: str, medidor_type: str, unit: str = "m³/h"):
         """
         Inicializa a janela do dashboard.
 
@@ -41,6 +41,7 @@ class DashboardWindow(ctk.CTkToplevel):
             medidor_type: O tipo do medidor.
         """
         super().__init__(parent)
+        self.unit = unit
         self.parent = parent
         self.medidor_model = medidor_model
         self.data_frame = data_frame
@@ -58,13 +59,13 @@ class DashboardWindow(ctk.CTkToplevel):
 
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
 
-        self.model_config = MODELO_CONFIG.get(medidor_model, MODELO_CONFIG["MV110"])
+        self.model_config = MODELO_CONFIG.get(medidor_model.strip().upper(), MODELO_CONFIG["MV110"])
 
         flow_ranges_raw, data_quality_raw, general_indicators = (
             DataProcessingService.calculate_dashboard_metrics(data_frame)
         )
 
-        if medidor_model == "MV145":
+        if medidor_model.strip().upper() == "MV145":
             flow_ranges_filtered = {}
             data_quality_filtered = {}
             hydraulic_status_filtered = {}
@@ -87,6 +88,9 @@ class DashboardWindow(ctk.CTkToplevel):
             )
             trigger_quality_filtered = {k: v for k, v in trigger_quality_raw.items() if v > 0}
 
+        if medidor_model.strip().upper() == "MV145":
+            process_status_filtered = {}
+        else:
             process_status_raw = (
                 DataProcessingService.calculate_process_status(data_frame)
                 if "status_process" in self.model_config["pie_charts"]
@@ -94,12 +98,16 @@ class DashboardWindow(ctk.CTkToplevel):
             )
             process_status_filtered = {k: v for k, v in process_status_raw.items() if v > 0}
 
-        plt.rcParams['axes.facecolor'] = '#ffffff'
-        plt.rcParams['figure.facecolor'] = '#ffffff'
+        # Create main container with flex layout (row)
+        self.main_container = ctk.CTkFrame(self, fg_color="white")
+        self.main_container.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Create the container frame for canvas (left side)
+        self.container_frame = ctk.CTkFrame(self.main_container, fg_color="white")
+        self.container_frame.pack(side="left", fill="both", expand=True)
 
-        if medidor_model == "MV145":
+        if medidor_model.strip().upper() == "MV145":
             self._setup_simplified_layout(data_frame, medidor_type, general_indicators)
-
         else:
             self._setup_complete_layout(
                 data_frame,
@@ -122,7 +130,7 @@ class DashboardWindow(ctk.CTkToplevel):
 
         self.line_flow, = self.ax_flow_speed.plot(data_frame['Data'], data_frame['Vazao'], label='VAZÃO', color=COR_VAZAO, lw=1.5)
         self.ax_flow_speed.fill_between(data_frame['Data'], data_frame['Vazao'], color=COR_VAZAO, alpha=0.08)
-        self.ax_flow_speed.set_ylabel("Vazão (m³/h)", color=COR_VAZAO, fontsize=12, fontweight='bold')
+        self.ax_flow_speed.set_ylabel(f"Vazão ({self.unit})", color=COR_VAZAO, fontsize=12, fontweight='bold')
         # pad=70 garante que o título fique acima da legenda (bbox_to_anchor=1.08)
         self.ax_flow_speed.set_title(f"MONITORAMENTO DE VAZÃO E VOLUME - {medidor_type} ({self.medidor_model})",
                                      fontsize=18, fontweight='bold', pad=70)
@@ -164,8 +172,7 @@ class DashboardWindow(ctk.CTkToplevel):
                                             bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
                                             visible=False, zorder=101)
 
-        self.container_frame = ctk.CTkFrame(self, fg_color="white")
-        self.container_frame.pack(fill="both", expand=True, padx=20)
+        # ✅ AGORA SÓ CRIAMOS O CANVAS UMA VEZ
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
         self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
 
@@ -219,7 +226,7 @@ class DashboardWindow(ctk.CTkToplevel):
             return f'{x/1000:,.1f}mil'.replace('.', ',') if x >= 1000 else str(int(x))
 
         self.ax_flow_speed.yaxis.set_major_formatter(FuncFormatter(format_mil))
-        self.ax_flow_speed.set_ylabel("Vazão (m³/h)", color=COR_VAZAO, fontsize=12, fontweight='bold')
+        self.ax_flow_speed.set_ylabel(f"Vazão ({self.unit})", color=COR_VAZAO, fontsize=12, fontweight='bold')
         self.ax_speed_twin.set_ylabel("Velocidade (m/s)", color=COR_VELOCIDADE, fontsize=12, fontweight='bold')
         self.ax_flow_speed.set_title(
             f"MONITORAMENTO DE VAZÃO E VELOCIDADE - {medidor_type} ({self.medidor_model})",
@@ -333,9 +340,7 @@ class DashboardWindow(ctk.CTkToplevel):
         for data_dict, title, grid_pos, chart_type in pie_configs:
             self._create_pie_chart(self.fig, gs, data_dict, title, grid_pos, chart_type)
 
-        self.container_frame = ctk.CTkFrame(self, fg_color="white")
-        self.container_frame.pack(fill="both", expand=True, padx=20)
-
+        # ✅ AGORA CRIAMOS O CANVAS APENAS UMA VEZ, DEPOIS DE TODOS OS GRÁFICOS
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
         self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
 
@@ -410,16 +415,11 @@ class DashboardWindow(ctk.CTkToplevel):
                 if abs(y_position - last_y) < MIN_VERTICAL_DIST:
                     y_position = last_y - MIN_VERTICAL_DIST
 
+            ax.annotate(f'{ann["pct"]:.1f}%', xy=(ann['x'], ann['y']), xytext=(x_position, y_position),
+                        textcoords='data', ha=horizontal_alignment, fontsize=8, fontweight='bold',
+                        bbox=dict(boxstyle='round,pad=0.3', fc='white', ec='white', alpha=0.7),
+                        arrowprops=dict(arrowstyle='-', color='black', lw=0.5))
             reference_list.append(y_position)
-
-            ax.annotate(f"{ann['pct']:.1f}%", 
-                        xy=(ann['x'], ann['y']), 
-                        xytext=(x_position, y_position),
-                        horizontalalignment=horizontal_alignment,
-                        fontsize=10, fontweight='bold',
-                        arrowprops=dict(arrowstyle="-", color="#555555", lw=0.8, 
-                                       connectionstyle="angle3,angleA=0,angleB=90"))
-
             self.wedges_info_map[ann['wedge']] = {'label': ann['label'], 'value': ann['value'], 'total': total_sum}
 
     def _add_sidebar(self, data_frame: pd.DataFrame, general_indicators: Optional[Dict[str, Any]] = None) -> None:
@@ -431,25 +431,51 @@ class DashboardWindow(ctk.CTkToplevel):
             self._add_info_label(sidebar_frame, "Nº DE SÉRIE", general_indicators.get('serial_number', 'N/A'))
             ctk.CTkLabel(sidebar_frame, text="PERÍODO", font=("Arial", 11, "bold"), text_color="#666666").pack(pady=(30, 0))
             if 'start_date' in general_indicators and 'end_date' in general_indicators:
-                ctk.CTkLabel(sidebar_frame, text=f"{general_indicators['start_date'].strftime('%d/%m/%Y %H:%M')}\naté\n{general_indicators['end_date'].strftime('%d/%m/%Y %H:%M')}", 
-                             font=("Arial", 12, "bold"), text_color="#000000").pack(pady=5)
-            self._add_info_label(sidebar_frame, "TOTAL POSITIVO ≈", 
-                                 f"{general_indicators.get('total_positive_accumulated', 0):,.0f} m³/h".replace(',', '.'))
+                ctk.CTkLabel(
+                    sidebar_frame,
+                    text=f"{general_indicators['start_date'].strftime('%d/%m/%Y %H:%M')}\naté\n{general_indicators['end_date'].strftime('%d/%m/%Y %H:%M')}",
+                    font=("Arial", 12, "bold"),
+                    text_color="#000000"
+                ).pack(pady=5)
+            self._add_info_label(
+                sidebar_frame,
+                "TOTAL POSITIVO ≈",
+                f"{general_indicators.get('total_positive_accumulated', 0):,.0f} m³/h".replace(',', '.')
+            )
         else:
-            # Para MV145, adicionar informações básicas
             ctk.CTkLabel(sidebar_frame, text="PERÍODO", font=("Arial", 11, "bold"), text_color="#666666").pack(pady=(30, 0))
             if not data_frame.empty:
-                ctk.CTkLabel(sidebar_frame, text=f"{data_frame['Data'].min().strftime('%d/%m/%Y %H:%M')}\naté\n{data_frame['Data'].max().strftime('%d/%m/%Y %H:%M')}", 
-                             font=("Arial", 12, "bold"), text_color="#000000").pack(pady=5)
+                ctk.CTkLabel(
+                    sidebar_frame,
+                    text=f"{data_frame['Data'].min().strftime('%d/%m/%Y %H:%M')}\naté\n{data_frame['Data'].max().strftime('%d/%m/%Y %H:%M')}",
+                    font=("Arial", 12, "bold"),
+                    text_color="#000000"
+                ).pack(pady=5)
 
         if self.medidor_model == "NF750" and 'Area' in data_frame.columns and 'Nivel' in data_frame.columns:
-            ctk.CTkButton(sidebar_frame, text="Detalhar", command=self._open_detailed_dashboard, 
-                          fg_color=COR_VAZAO, height=45).pack(pady=(10, 10), padx=30, fill="x")
+            ctk.CTkButton(
+                sidebar_frame,
+                text="Detalhar",
+                command=self._open_detailed_dashboard,
+                fg_color=COR_VAZAO,
+                height=45
+            ).pack(pady=(10, 10), padx=30, fill="x")
 
-        ctk.CTkButton(sidebar_frame, text="Exportar Relatório", command=self._export_report, 
-                      fg_color=COR_VAZAO, height=45).pack(pady=(10, 10), padx=30, fill="x")
-        ctk.CTkButton(sidebar_frame, text="Nova Importação", command=self._return_to_import, 
-                      fg_color="#6c757d", height=45).pack(pady=10, padx=30, fill="x")
+        ctk.CTkButton(
+            sidebar_frame,
+            text="Exportar Relatório",
+            command=self._export_report,
+            fg_color=COR_VAZAO,
+            height=45
+        ).pack(pady=(10, 10), padx=30, fill="x")
+
+        ctk.CTkButton(
+            sidebar_frame,
+            text="Nova Importação",
+            command=self._return_to_import,
+            fg_color="#6c757d",
+            height=45
+        ).pack(pady=10, padx=30, fill="x")
 
     def _add_info_label(self, master_frame: ctk.CTkFrame, title: str, value: Any) -> None:
         """Adiciona um par de labels (título e valor) a um frame."""
@@ -512,7 +538,7 @@ class DashboardWindow(ctk.CTkToplevel):
                                     f"{extra_label}: {extra_val:,.2f} {extra_unit}")
                 else:
                     tooltip_text = (f"DATA: {pd.Timestamp(date_at).strftime('%d/%m/%Y %H:%M')}\n"
-                                    f"VAZÃO: {flow_val:,.2f} m³/h")
+                                    f"VAZÃO: {flow_val:,.2f} {self.unit}")
 
                 self.annotation_line.set_text(tooltip_text)
                 self.annotation_line.set_visible(True); self.annotation_pie.set_visible(False)
@@ -557,7 +583,8 @@ class DashboardWindow(ctk.CTkToplevel):
             parent=self,
             data_frame=self.data_frame,
             medidor_model=self.medidor_model,
-            medidor_type=medidor_type
+            medidor_type=medidor_type,
+            unit=self.unit
         )
 
     def _return_to_import(self) -> None:
@@ -571,12 +598,13 @@ class DashboardWindow(ctk.CTkToplevel):
         if messagebox.askokcancel("Sair", "Deseja realmente fechar o programa?"):
             try:
                 plt.close('all')
-                self.parent.quit()
-                if self.parent.winfo_exists():
-                    self.parent.destroy()
-                sys.exit(0)
-            except (RuntimeError, Exception):
-                sys.exit(0)
+                self.destroy()  # ✅ Fechar apenas o dashboard, não a janela pai
+            except (RuntimeError, Exception) as e:
+                logger.error(f"Erro ao fechar dashboard: {e}")
+                try:
+                    self.destroy()
+                except:
+                    pass
 
     def _export_report(self) -> None:
         """Exporta o gráfico do dashboard como uma imagem PNG."""

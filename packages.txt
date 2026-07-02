@@ -1,22 +1,28 @@
 DashboardAPP/
 ├── src/
-│   ├── __init__.py
 │   ├── core/
 │   │   ├── __init__.py
-│   │   └── config.py             # Configurações globais e constantes (ex: MAPA_COLUNAS)
+│   │   ├── config.py             # Configurações globais e constantes
+│   │   └── column_mappings.json  # Mapeamento de colunas
 │   ├── services/
 │   │   ├── __init__.py
-│   │   ├── data_processing.py    # Lógica de carregamento, limpeza e cálculo de métricas dos dados
-│   │   └── medidor_lookup.py     # Serviço para buscar informações de medidores (tipo, modelo) via serial
+│   │   ├── data_processing.py    # Lógica de processamento de dados
+│   │   └── medidor_lookup.py     # Busca de informações de medidores
 │   ├── ui/
 │   │   ├── __init__.py
-│   │   ├── app.py                         # A classe principal da aplicação GUI (tela inicial)
-│   │   ├── dashboard_window.py            # A classe da janela do dashboard (exibição de gráficos)
-│   │   └── detailed_dashboard_window.py   # A classe da janela detalhada de medidores especificos
+│   │   ├── app.py                # Classe principal da aplicação GUI
+│   │   ├── dashboard_window.py   # Janela do dashboard
+│   │   ├── detailed_dashboard_window.py # Janela detalhada
+│   │   └── components/
+│   │       └── confirmation_dialog.py   # Diálogo de confirmação
 │   └── utils/
 │       ├── __init__.py
-│       └── helpers.py            # Funções utilitárias genéricas (ex: resource_path)
-├── main.py                     # Ponto de entrada da aplicação
-├── Medidores - 2026.xlsx       # Arquivo de dados dos medidores para lookup
-├── logo.ico                    # Ícone da aplicação
-└── requirements.txt            # Dependências do projeto
+│       ├── helpers.py            # Funções utilitárias
+│       └── logger.py             # Utilitário de log
+├── main.py                       # Ponto de entrada da aplicação
+├── logo.ico                      # Ícone da aplicação
+├── Medidores - 2026.xlsx         # Arquivo de dados
+├── medidados.log                 # Arquivo de log
+├── medidados.spec                # Configuração do PyInstaller
+├── README.md                     # Documentação
+└── requirements.txt              # Dependências do projeto
