@@ -2,32 +2,31 @@
 
 from PyInstaller.utils.hooks import collect_submodules
 
+block_cipher = None
+
 hiddenimports = [
     *collect_submodules('tkinterdnd2'),
-    'openpyxl',
-    'pandas',
-    'numpy',
-    'matplotlib',
     'matplotlib.backends.backend_tkagg',
     'mplcursors',
-    'customtkinter',
-    'PIL',
     'PIL._tkinter_finder',
 ]
 
-block_cipher = None
-
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=['.', './src'],
     binaries=[],
     datas=[
         ('logo.ico', '.'),
         ('Medidores - 2026.xlsx', '.'),
+        ('src/core/column_mappings.json', 'src/core'),
     ],
     hiddenimports=hiddenimports,
     hookspath=[],
-    hooksconfig={},
+    hooksconfig={
+        'matplotlib': {
+            'backends': ['TkAgg'],
+        },
+    },
     runtime_hooks=[],
     excludes=[],
     win_no_prefer_redirects=False,

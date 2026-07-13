@@ -55,7 +55,7 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper): # Renamed from AppAnalise to A
         self.frame_drop.pack(pady=10); self.frame_drop.pack_propagate(False)
         ctk.CTkLabel(self.frame_drop, text="ARRASTE O ARQUIVO AQUI\n(Excel ou CSV)", font=("Arial", 15, "bold"), text_color=COR_VAZAO).pack(expand=True)
         
-        ctk.CTkLabel(self, text="v6.1 | Medidados\nGustavo Lopes Lameu\nGEMED", font=("Arial", 10), text_color="gray").pack(side="bottom", pady=15)
+        ctk.CTkLabel(self, text="v7.0 | Medidados\nGustavo Lopes Lameu\nGEMED", font=("Arial", 10), text_color="gray").pack(side="bottom", pady=15)
         
         self.medidor_lookup_service = MedidorLookupService()
         self.data_processing_service = DataProcessingService()

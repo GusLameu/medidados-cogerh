@@ -59,7 +59,8 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
     def _setup_detailed_layout(self, data_frame: pd.DataFrame, medidor_type: str) -> None:
         """Layout detalhado com 4 gráficos: Vazão, Velocidade, Nível e Área."""
         self.fig = plt.figure(figsize=(20, 12), dpi=100)
-        self.fig.subplots_adjust(top=0.92, bottom=0.08, left=0.06, right=0.96, hspace=0.4, wspace=0.3)
+        # Aumenta o espaço superior para caber título + legenda abaixo dele
+        self.fig.subplots_adjust(top=0.90, bottom=0.08, left=0.06, right=0.96, hspace=0.4, wspace=0.3)
 
         self.ax_vazao = self.fig.add_subplot(2, 2, 1)
         self.ax_velocidade = self.fig.add_subplot(2, 2, 2)
@@ -103,7 +104,8 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
             data_frame['Data'], data_frame['Vazao'],
             color=COR_VAZAO, alpha=0.1
         )
-        self.ax_vazao.set_title("VAZÃO", fontsize=14, fontweight='bold', color=COR_VAZAO, pad=50)
+        # Título com pad suficiente para a legenda abaixo
+        self.ax_vazao.set_title("VAZÃO", fontsize=14, fontweight='bold', color=COR_VAZAO, pad=30)
         self.ax_vazao.set_ylabel("Vazão (m³/h)", color=COR_VAZAO, fontsize=11)
         self.ax_vazao.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
         self.ax_vazao.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
@@ -115,8 +117,9 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                              label=f'Média ({mean_val:,.2f})')
 
         lines_v, labels_v = self.ax_vazao.get_legend_handles_labels()
-        self.ax_vazao.legend(lines_v, labels_v, loc='upper center', bbox_to_anchor=(0.5, 1.15),
-                            ncol=2, frameon=False, fontsize=9)
+        # Legenda abaixo do título, centralizada
+        self.ax_vazao.legend(lines_v, labels_v, loc='lower center', bbox_to_anchor=(0.5, 1.02),
+                             ncol=2, frameon=False, fontsize=9)
 
     def _plot_velocidade(self, data_frame: pd.DataFrame) -> None:
         """Plota o gráfico de Velocidade em vermelho pontilhado."""
@@ -125,19 +128,19 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Velocidade'],
                 label='VELOCIDADE', color=COR_VELOCIDADE, lw=1.2, linestyle='--'
             )
-            self.ax_velocidade.set_title("VELOCIDADE", fontsize=14, fontweight='bold', color=COR_VELOCIDADE, pad=50)
+            self.ax_velocidade.set_title("VELOCIDADE", fontsize=14, fontweight='bold', color=COR_VELOCIDADE, pad=30)
             self.ax_velocidade.set_ylabel("Velocidade (m/s)", color=COR_VELOCIDADE, fontsize=11)
             self.ax_velocidade.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_velocidade.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
             self.ax_velocidade.set_ylim(bottom=data_frame['Velocidade'].min())
             self.ax_velocidade.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_velocidade.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
-                                     frameon=False, fontsize=9)
+            self.ax_velocidade.legend(loc='lower center', bbox_to_anchor=(0.5, 1.02),
+                                      ncol=1, frameon=False, fontsize=9)
         else:
             self.ax_velocidade.text(0.5, 0.5, 'Dados de Velocidade\nNão Disponíveis',
                                    ha='center', va='center', fontsize=12, color='gray',
                                    transform=self.ax_velocidade.transAxes)
-            self.ax_velocidade.set_title("VELOCIDADE", fontsize=14, fontweight='bold', color=COR_VELOCIDADE)
+            self.ax_velocidade.set_title("VELOCIDADE", fontsize=14, fontweight='bold', color=COR_VELOCIDADE, pad=30)
             self.line_velocidade = None
 
     def _plot_nivel(self, data_frame: pd.DataFrame) -> None:
@@ -151,19 +154,19 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Nivel'],
                 color=COR_NIVEL, alpha=0.1
             )
-            self.ax_nivel.set_title("NÍVEL", fontsize=14, fontweight='bold', color=COR_NIVEL, pad=50)
+            self.ax_nivel.set_title("NÍVEL", fontsize=14, fontweight='bold', color=COR_NIVEL, pad=30)
             self.ax_nivel.set_ylabel("Nível (m)", color=COR_NIVEL, fontsize=11)
             self.ax_nivel.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_nivel.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
             self.ax_nivel.set_ylim(bottom=data_frame['Nivel'].min())
             self.ax_nivel.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_nivel.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
-                               frameon=False, fontsize=9)
+            self.ax_nivel.legend(loc='lower center', bbox_to_anchor=(0.5, 1.02),
+                                 ncol=1, frameon=False, fontsize=9)
         else:
             self.ax_nivel.text(0.5, 0.5, 'Dados de Nível\nNão Disponíveis',
                               ha='center', va='center', fontsize=12, color='gray',
                               transform=self.ax_nivel.transAxes)
-            self.ax_nivel.set_title("NÍVEL", fontsize=14, fontweight='bold', color=COR_NIVEL)
+            self.ax_nivel.set_title("NÍVEL", fontsize=14, fontweight='bold', color=COR_NIVEL, pad=30)
             self.line_nivel = None
 
     def _plot_area(self, data_frame: pd.DataFrame) -> None:
@@ -177,19 +180,19 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
                 data_frame['Data'], data_frame['Area'],
                 color=COR_AREA, alpha=0.1
             )
-            self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA, pad=50)
+            self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA, pad=30)
             self.ax_area.set_ylabel("Área (m²)", color=COR_AREA, fontsize=11)
             self.ax_area.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
             self.ax_area.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
             self.ax_area.set_ylim(bottom=data_frame['Area'].min())
             self.ax_area.grid(True, axis='y', linestyle=':', alpha=0.3)
-            self.ax_area.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
-                              frameon=False, fontsize=9)
+            self.ax_area.legend(loc='lower center', bbox_to_anchor=(0.5, 1.02),
+                                ncol=1, frameon=False, fontsize=9)
         else:
             self.ax_area.text(0.5, 0.5, 'Dados de Área\nNão Disponíveis',
                              ha='center', va='center', fontsize=12, color='gray',
                              transform=self.ax_area.transAxes)
-            self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA)
+            self.ax_area.set_title("ÁREA", fontsize=14, fontweight='bold', color=COR_AREA, pad=30)
             self.line_area = None
 
     def _export_report(self) -> None:
@@ -199,8 +202,8 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
             self.fig.savefig(file_path, dpi=300, bbox_inches='tight')
 
     def _add_info_panel(self, data_frame: pd.DataFrame, medidor_type: str) -> None:
-        """Adiciona painel de informações na parte inferior."""
-        info_frame = ctk.CTkFrame(self.container_frame, fg_color="#f0f0f0", corner_radius=10, height=60)
+        """Adiciona painel de informações na parte inferior com quebra de linha automática."""
+        info_frame = ctk.CTkFrame(self.container_frame, fg_color="#f0f0f0", corner_radius=10, height=70)
         info_frame.pack(side="bottom", fill="x", padx=10, pady=(5, 10))
         info_frame.pack_propagate(False)
 
@@ -211,7 +214,9 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
             f"Total de registros: {len(data_frame)}"
         )
 
-        ctk.CTkLabel(info_frame, text=info_text, font=("Arial", 12, "bold"), text_color="#333333").pack(expand=True)
+        lbl = ctk.CTkLabel(info_frame, text=info_text, font=("Arial", 12, "bold"), text_color="#333333")
+        lbl.pack(expand=True)
+        info_frame.bind("<Configure>", lambda e: lbl.configure(wraplength=e.width - 40))
 
     def _setup_hover_elements(self, data_frame: pd.DataFrame) -> None:
         """Cria linhas verticais e anotações para hover em cada subplot."""
