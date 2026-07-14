@@ -68,11 +68,35 @@ class ConfirmationDialog(ctk.CTkToplevel):
         self.btn_cancel = ctk.CTkButton(self.button_frame, text="Cancelar", command=self._on_cancel, fg_color="red", text_color="white", width=100)
         self.btn_cancel.pack(side="left", padx=10)
 
-        # Center the window
+        # Center the window on the parent
         self.update_idletasks()
-        x = self.winfo_x() + (self.winfo_width() // 2)
-        y = self.winfo_y() + (self.winfo_height() // 2)
-        self.geometry(f"+{x}+{y}")
+
+        # Get parent window position and size
+        parent_x = parent.winfo_x()
+        parent_y = parent.winfo_y()
+        parent_width = parent.winfo_width()
+        parent_height = parent.winfo_height()
+
+        # Get dialog size
+        dialog_width = self.winfo_width()
+        dialog_height = self.winfo_height()
+
+        # Calculate center position relative to parent
+        x = parent_x + (parent_width // 2) - (dialog_width // 2)
+        y = parent_y + (parent_height // 2) - (dialog_height // 2)
+
+        # Ensure dialog stays within screen bounds
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+
+        dialog_width = 450
+        dialog_height = 400
+
+        # Centro da tela
+        x = (screen_width // 2) - (dialog_width // 2)
+        y = (screen_height // 2) - (dialog_height // 2)
+
+        self.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
 
     def _update_vazao_display(self, new_unit):
         self.selected_unit = new_unit

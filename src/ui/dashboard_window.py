@@ -598,11 +598,13 @@ class DashboardWindow(ctk.CTkToplevel):
         if messagebox.askokcancel("Sair", "Deseja realmente fechar o programa?"):
             try:
                 plt.close('all')
-                self.destroy()  # ✅ Fechar apenas o dashboard, não a janela pai
+                self.destroy()
+                self.parent.destroy()
             except (RuntimeError, Exception) as e:
                 logger.error(f"Erro ao fechar dashboard: {e}")
                 try:
                     self.destroy()
+                    self.parent.destroy()
                 except:
                     pass
 
