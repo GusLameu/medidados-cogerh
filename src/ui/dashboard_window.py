@@ -172,7 +172,6 @@ class DashboardWindow(ctk.CTkToplevel):
                                             bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
                                             visible=False, zorder=101)
 
-        # ✅ AGORA SÓ CRIAMOS O CANVAS UMA VEZ
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
         self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
 
@@ -340,7 +339,6 @@ class DashboardWindow(ctk.CTkToplevel):
         for data_dict, title, grid_pos, chart_type in pie_configs:
             self._create_pie_chart(self.fig, gs, data_dict, title, grid_pos, chart_type)
 
-        # ✅ AGORA CRIAMOS O CANVAS APENAS UMA VEZ, DEPOIS DE TODOS OS GRÁFICOS
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
         self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
 
@@ -428,31 +426,73 @@ class DashboardWindow(ctk.CTkToplevel):
         sidebar_frame.pack(side="right", fill="y", padx=10, pady=20)
 
         if general_indicators:
+            # Número de série
             self._add_info_label(sidebar_frame, "Nº DE SÉRIE", general_indicators.get('serial_number', 'N/A'))
-            ctk.CTkLabel(sidebar_frame, text="PERÍODO", font=("Arial", 11, "bold"), text_color="#666666").pack(pady=(30, 0))
+
+            # Período
+            ctk.CTkLabel(
+                sidebar_frame,
+                text="PERÍODO",
+                font=("Arial", 11, "bold"),
+                text_color="#666666"
+            ).pack(pady=(30, 0))
+
             if 'start_date' in general_indicators and 'end_date' in general_indicators:
                 ctk.CTkLabel(
                     sidebar_frame,
-                    text=f"{general_indicators['start_date'].strftime('%d/%m/%Y %H:%M')}\naté\n{general_indicators['end_date'].strftime('%d/%m/%Y %H:%M')}",
-                    font=("Arial", 12, "bold"),
-                    text_color="#000000"
-                ).pack(pady=5)
-            self._add_info_label(
-                sidebar_frame,
-                "TOTAL POSITIVO ≈",
-                f"{general_indicators.get('total_positive_accumulated', 0):,.0f} m³/h".replace(',', '.')
-            )
-        else:
-            ctk.CTkLabel(sidebar_frame, text="PERÍODO", font=("Arial", 11, "bold"), text_color="#666666").pack(pady=(30, 0))
-            if not data_frame.empty:
-                ctk.CTkLabel(
-                    sidebar_frame,
-                    text=f"{data_frame['Data'].min().strftime('%d/%m/%Y %H:%M')}\naté\n{data_frame['Data'].max().strftime('%d/%m/%Y %H:%M')}",
+                    text=(
+                        f"{general_indicators['start_date'].strftime('%d/%m/%Y %H:%M')}\n"
+                        f"até\n"
+                        f"{general_indicators['end_date'].strftime('%d/%m/%Y %H:%M')}"
+                    ),
                     font=("Arial", 12, "bold"),
                     text_color="#000000"
                 ).pack(pady=5)
 
-        if self.medidor_model == "NF750" and 'Area' in data_frame.columns and 'Nivel' in data_frame.columns:
+            # Bloco de TOTAL POSITIVO apenas se NÃO for MV145
+            if self.medidor_model.strip().upper() != "MV145":
+                ctk.CTkLabel(
+                    sidebar_frame,
+                    text="TOTAL POSITIVO ≈",
+                    font=("Arial", 11, "bold"),
+                    text_color="#666666"
+                ).pack(pady=(30, 0))
+
+                self.total_label = ctk.CTkLabel(
+                    sidebar_frame,
+                    text="",
+                    font=("Arial", 22, "bold"),
+                    text_color="#000000"
+                )
+                self.total_label.pack(pady=(0, 5))
+
+                # Guarda indicadores e atualiza label de total para modelos que possuem totalizado
+                self.general_indicators = general_indicators
+                self._update_total_label()
+
+        else:
+            # Caso sem general_indicators (ex.: MV145 com dados básicos)
+            ctk.CTkLabel(
+                sidebar_frame,
+                text="PERÍODO",
+                font=("Arial", 11, "bold"),
+                text_color="#666666"
+            ).pack(pady=(30, 0))
+
+            if not data_frame.empty:
+                ctk.CTkLabel(
+                    sidebar_frame,
+                    text=(
+                        f"{data_frame['Data'].min().strftime('%d/%m/%Y %H:%M')}\n"
+                        f"até\n"
+                        f"{data_frame['Data'].max().strftime('%d/%m/%Y %H:%M')}"
+                    ),
+                    font=("Arial", 12, "bold"),
+                    text_color="#000000"
+                ).pack(pady=5)
+
+        # Botão Detalhar só para NF750 com Area/Nivel
+        if self.medidor_model.strip().upper() == "NF750" and 'Area' in data_frame.columns and 'Nivel' in data_frame.columns:
             ctk.CTkButton(
                 sidebar_frame,
                 text="Detalhar",
@@ -461,6 +501,7 @@ class DashboardWindow(ctk.CTkToplevel):
                 height=45
             ).pack(pady=(10, 10), padx=30, fill="x")
 
+        # Botões comuns
         ctk.CTkButton(
             sidebar_frame,
             text="Exportar Relatório",
@@ -481,6 +522,23 @@ class DashboardWindow(ctk.CTkToplevel):
         """Adiciona um par de labels (título e valor) a um frame."""
         ctk.CTkLabel(master_frame, text=title, font=("Arial", 11, "bold"), text_color="#666666").pack(pady=(30,0))
         ctk.CTkLabel(master_frame, text=str(value), font=("Arial", 22, "bold"), text_color="#000000").pack(pady=(0,5))
+
+    def _update_total_label(self) -> None:
+        """Atualiza o label do total positivo baseado na unidade selecionada."""
+        if not hasattr(self, 'total_label') or not hasattr(self, 'general_indicators'):
+            return
+        
+        total_value = self.general_indicators.get('total_positive_accumulated', 0)
+        
+        # Mostrar a unidade correta sem converter o valor
+        if self.unit == "l/s":
+            unit_display = "L"
+        else:  # m³/h ou m³/s
+            unit_display = "m³"
+        
+        self.total_label.configure(
+            text=f"{total_value:,.0f} {unit_display}".replace(',', '.')
+        )
 
     def _redraw_static_elements(self) -> None:
         """Redesenha elementos estáticos do gráfico."""
@@ -534,7 +592,7 @@ class DashboardWindow(ctk.CTkToplevel):
                     extra_label = "VOLUME" if self.medidor_model == "MV145" else "VELOCIDADE"
                     extra_unit = "m³" if self.medidor_model == "MV145" else "m/s"
                     tooltip_text = (f"DATA: {pd.Timestamp(date_at).strftime('%d/%m/%Y %H:%M')}\n"
-                                    f"VAZÃO: {flow_val:,.2f} m³/h\n"
+                                    f"VAZÃO: {flow_val:,.2f} {self.unit}\n"
                                     f"{extra_label}: {extra_val:,.2f} {extra_unit}")
                 else:
                     tooltip_text = (f"DATA: {pd.Timestamp(date_at).strftime('%d/%m/%Y %H:%M')}\n"

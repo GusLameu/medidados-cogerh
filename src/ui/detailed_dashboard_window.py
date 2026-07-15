@@ -106,7 +106,7 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
         )
         # Título com pad suficiente para a legenda abaixo
         self.ax_vazao.set_title("VAZÃO", fontsize=14, fontweight='bold', color=COR_VAZAO, pad=30)
-        self.ax_vazao.set_ylabel("Vazão (m³/h)", color=COR_VAZAO, fontsize=11)
+        self.ax_vazao.set_ylabel(f"Vazão ({self.unit})", color=COR_VAZAO, fontsize=11)
         self.ax_vazao.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
         self.ax_vazao.set_xlim(data_frame['Data'].min(), data_frame['Data'].max())
         self.ax_vazao.set_ylim(bottom=data_frame['Vazao'].min())

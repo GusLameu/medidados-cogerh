@@ -10,7 +10,7 @@ class ConfirmationDialog(ctk.CTkToplevel):
         super().__init__(parent)
         
         self.title("Confirmar Processamento")
-        self.geometry("450x400")
+        self.geometry("600x500")
         self.configure(fg_color="white")
         self.attributes("-topmost", True)
         self.grab_set()  # Make the dialog modal
@@ -89,8 +89,8 @@ class ConfirmationDialog(ctk.CTkToplevel):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
 
-        dialog_width = 450
-        dialog_height = 400
+        dialog_width = 600
+        dialog_height = 500
 
         # Centro da tela
         x = (screen_width // 2) - (dialog_width // 2)
@@ -106,12 +106,8 @@ class ConfirmationDialog(ctk.CTkToplevel):
         # 1 m3/h = 1000 / 3600 l/s = 1/3.6 l/s
         
         val = self.vazao_media_original
-        if new_unit == "m³/s":
-            val = val / 3600
-        elif new_unit == "l/s":
-            val = val / 3.6
-            
-        self.label_vazao.configure(text=f"Vazão Média: {val:.4f} {new_unit}")
+        # Mantém o valor original, apenas muda a unidade
+        self.label_vazao.configure(text=f"Vazão Média: {self.vazao_media_original:.2f} {new_unit}")
 
     def _on_confirm(self):
         self.result = (True, self.selected_unit)
