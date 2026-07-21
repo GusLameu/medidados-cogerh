@@ -18,6 +18,9 @@ from src.ui.dashboard_window import DashboardWindow
 from src.ui.components.confirmation_dialog import ConfirmationDialog
 
 from src.core.config import COR_VAZAO, COR_FUNDO_DROP, MAPA_COLUNAS
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper): # Renamed from AppAnalise to App
     """
@@ -100,9 +103,6 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper): # Renamed from AppAnalise to A
                 df_temp = self.data_processing_service._load_raw_data(path)
                 df_temp.columns = [str(col).strip().upper() for col in df_temp.columns]
 
-                
-                from src.utils.logger import get_logger
-                logger = get_logger(__name__)
                 logger.info(f"Colunas detectadas no arquivo: {df_temp.columns.tolist()}")
                 
                 column_mapping = MAPA_COLUNAS.get(medidor_model.strip().upper(), {})

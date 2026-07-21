@@ -83,7 +83,7 @@ class DashboardWindow(ctk.CTkToplevel):
 
             trigger_quality_raw = (
                 DataProcessingService.calculate_trigger_quality_status(data_frame)
-                if "status_hidraulico" in self.model_config["pie_charts"]
+                if "qualidade_trigger" in self.model_config["pie_charts"]
                 else {}
             )
             trigger_quality_filtered = {k: v for k, v in trigger_quality_raw.items() if v > 0}
@@ -326,13 +326,13 @@ class DashboardWindow(ctk.CTkToplevel):
 
         if "status_hidraulico" in self.model_config["pie_charts"]:
             pie_configs.append(
-                (hydraulic_status, "Status Hidráulico", (1, col_idx), "status_hidraulico")
+                (hydraulic_status, "Qualidade Hidráulica", (1, col_idx), "status_hidraulico")
             )
             col_idx += 1
 
         if "qualidade_trigger" in self.model_config["pie_charts"]:
             pie_configs.append(
-                (trigger_quality, "Trigger", (1, col_idx), "qualidade_trigger")
+                (trigger_quality, "Qualidade Trigger", (1, col_idx), "qualidade_trigger")
             )
             col_idx += 1
 

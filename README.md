@@ -63,6 +63,13 @@ cd medidados-cogerh
 pip install -r requirements.txt
 ```
 
+> 💡 Se estiver usando **Python 3.14+** e encontrar erros de compatibilidade, crie um ambiente virtual primeiro:
+> ```bash
+> py -m venv .venv
+> .venv\Scripts\activate
+> pip install -r requirements.txt
+> ```
+
 4. Garantir que o arquivo `Medidores - 2026.xlsx` esteja na raiz do projeto (mesmo nível de `main.py`).
 
 5. Executar a aplicação:
