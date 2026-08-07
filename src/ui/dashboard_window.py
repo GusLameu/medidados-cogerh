@@ -142,6 +142,17 @@ class DashboardWindow(ctk.CTkToplevel):
         self.ax_flow_speed.set_ylim(-max_flow * 0.05, max_flow * 1.3)
         self.ax_flow_speed.grid(True, axis='y', linestyle=':', alpha=0.3)
 
+        positive_flow = data_frame[data_frame['Vazao'] > 0]['Vazao']
+        self.mean_flow_value = positive_flow.mean() if not positive_flow.empty else 0.0
+        self.ax_flow_speed.axhline(
+            y=self.mean_flow_value,
+            color='green',
+            linestyle=':',
+            lw=1.5,
+            alpha=0.7,
+            label=f'MÉDIA ({self.mean_flow_value:,.2f})'
+        )
+
         # Volume como eixo secundário, se disponível
         self.ax_speed_twin = None
         self.line_speed = None
@@ -154,10 +165,10 @@ class DashboardWindow(ctk.CTkToplevel):
             lines2, labels2 = self.ax_speed_twin.get_legend_handles_labels()
             self.main_legend = self.ax_flow_speed.legend(lines1 + lines2, labels1 + labels2,
                                                          loc='upper center', bbox_to_anchor=(0.5, 1.08),
-                                                         ncol=2, frameon=False, fontsize=10)
+                                                         ncol=3, frameon=False, fontsize=10)
         else:
             self.main_legend = self.ax_flow_speed.legend(loc='upper center', bbox_to_anchor=(0.5, 1.08),
-                                                         ncol=1, frameon=False, fontsize=10)
+                                                         ncol=2, frameon=False, fontsize=10)
         if 'Volume' not in data_frame.columns:
                 logger.warning("Aviso: Coluna 'Volume' não encontrada nos dados. Gráfico de volume não será exibido.")
 
@@ -256,14 +267,14 @@ class DashboardWindow(ctk.CTkToplevel):
         )
 
         positive_flow = data_frame[data_frame['Vazao'] > 0]['Vazao']
-        mean_flow_value = positive_flow.mean() if not positive_flow.empty else 0.0
+        self.mean_flow_value = positive_flow.mean() if not positive_flow.empty else 0.0
         self.ax_flow_speed.axhline(
-            y=mean_flow_value,
+            y=self.mean_flow_value,
             color='green',
             linestyle=':',
             lw=1.5,
             alpha=0.7,
-            label=f'MÉDIA ({mean_flow_value:,.2f})'
+            label=f'MÉDIA ({self.mean_flow_value:,.2f})'
         )
 
         lines1, labels1 = self.ax_flow_speed.get_legend_handles_labels()
@@ -594,10 +605,12 @@ class DashboardWindow(ctk.CTkToplevel):
                     extra_unit = "m³" if self.medidor_model == "MV145" else "m/s"
                     tooltip_text = (f"DATA: {pd.Timestamp(date_at).strftime('%d/%m/%Y %H:%M')}\n"
                                     f"VAZÃO: {flow_val:,.2f} {self.unit}\n"
+                                    f"MÉDIA: {self.mean_flow_value:,.2f} {self.unit}\n"
                                     f"{extra_label}: {extra_val:,.2f} {extra_unit}")
                 else:
                     tooltip_text = (f"DATA: {pd.Timestamp(date_at).strftime('%d/%m/%Y %H:%M')}\n"
-                                    f"VAZÃO: {flow_val:,.2f} {self.unit}")
+                                    f"VAZÃO: {flow_val:,.2f} {self.unit}\n"
+                                    f"MÉDIA: {self.mean_flow_value:,.2f} {self.unit}")
 
                 self.annotation_line.set_text(tooltip_text)
                 self.annotation_line.set_visible(True); self.annotation_pie.set_visible(False)
