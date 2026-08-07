@@ -86,7 +86,7 @@ class DataProcessingService:
             return None
 
     @staticmethod
-    def process_medidor_data(file_path: str, medidor_model: str, unit: str = "m³/h") -> pd.DataFrame:
+    def process_medidor_data(file_path: str, medidor_model: str) -> pd.DataFrame:
         """
         Carrega e processa os dados de um medidor, aplicando limpeza e transformações.
 
@@ -131,13 +131,6 @@ class DataProcessingService:
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '.'), errors='coerce').fillna(0)
-
-        if 'Vazao' in df.columns:
-            if unit == "m³/s":
-                df['Vazao'] = df['Vazao'] / 3600
-            elif unit == "l/s":
-                df['Vazao'] = df['Vazao'] / 3.6
-
 
         logger.info(f"Processamento concluído para o modelo {medidor_model}. {len(df)} registros processados.")
         return df

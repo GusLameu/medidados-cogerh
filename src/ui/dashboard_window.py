@@ -255,7 +255,8 @@ class DashboardWindow(ctk.CTkToplevel):
             label='VELOCIDADE', color=COR_VELOCIDADE, lw=0.8, linestyle='--'
         )
 
-        mean_flow_value = data_frame['Vazao'].mean()
+        positive_flow = data_frame[data_frame['Vazao'] > 0]['Vazao']
+        mean_flow_value = positive_flow.mean() if not positive_flow.empty else 0.0
         self.ax_flow_speed.axhline(
             y=mean_flow_value,
             color='green',

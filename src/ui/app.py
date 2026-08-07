@@ -147,8 +147,7 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper): # Renamed from AppAnalise to A
 
     def _tarefa_processamento_completo(self, path, medidor_model, medidor_type, unit):
         try:
-            # Processar os dados com a unidade escolhida
-            processed_df = self.data_processing_service.process_medidor_data(path, medidor_model, unit)
+            processed_df = self.data_processing_service.process_medidor_data(path, medidor_model)
             self.after(0, lambda: self._finalizar_carregamento(processed_df, medidor_model, medidor_type, unit))
         except Exception as e:
             self.after(0, lambda: messagebox.showerror("Erro no Processamento", str(e)))
