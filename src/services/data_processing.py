@@ -152,8 +152,8 @@ class DataProcessingService:
             - indicadores_gerais (Dict[str, Any]): Indicadores como número de série, datas e total acumulado.
         """
         logger.debug("Calculando métricas do dashboard")
-        positive_flow_values = data_frame[data_frame['Vazao'] > 0]['Vazao']
-        mean_flow = positive_flow_values.mean() if not positive_flow_values.empty else 0.0
+        flow_values = data_frame['Vazao'].dropna()
+        mean_flow = flow_values.mean() if not flow_values.empty else 0.0
         flow_limit = round(mean_flow, 1)
 
         flow_ranges: Dict[str, int] = {

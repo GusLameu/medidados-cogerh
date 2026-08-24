@@ -142,8 +142,8 @@ class DashboardWindow(ctk.CTkToplevel):
         self.ax_flow_speed.set_ylim(-max_flow * 0.05, max_flow * 1.3)
         self.ax_flow_speed.grid(True, axis='y', linestyle=':', alpha=0.3)
 
-        positive_flow = data_frame[data_frame['Vazao'] > 0]['Vazao']
-        self.mean_flow_value = positive_flow.mean() if not positive_flow.empty else 0.0
+        flow_values = data_frame['Vazao'].dropna()
+        self.mean_flow_value = flow_values.mean() if not flow_values.empty else 0.0
         self.ax_flow_speed.axhline(
             y=self.mean_flow_value,
             color='green',
@@ -266,8 +266,8 @@ class DashboardWindow(ctk.CTkToplevel):
             label='VELOCIDADE', color=COR_VELOCIDADE, lw=0.8, linestyle='--'
         )
 
-        positive_flow = data_frame[data_frame['Vazao'] > 0]['Vazao']
-        self.mean_flow_value = positive_flow.mean() if not positive_flow.empty else 0.0
+        flow_values = data_frame['Vazao'].dropna()
+        self.mean_flow_value = flow_values.mean() if not flow_values.empty else 0.0
         self.ax_flow_speed.axhline(
             y=self.mean_flow_value,
             color='green',
