@@ -117,9 +117,9 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper): # Renamed from AppAnalise to A
                     logger.info(f"Coluna 'Vazao' encontrada. Primeiros valores: {df_temp['Vazao'].head().tolist()}")
                     vazao_col = pd.to_numeric(df_temp['Vazao'].astype(str).str.replace(',', '.'), errors='coerce')
                     logger.info(f"Valores após conversão numérica: {vazao_col.head().tolist()}")
-                    positive_flow = vazao_col[vazao_col > 0]
-                    mean_flow = positive_flow.mean() if not positive_flow.empty else 0.0
-                    logger.info(f"Média de vazão positiva calculada: {mean_flow}")
+                    vazao_col = vazao_col.dropna()
+                    mean_flow = vazao_col.mean() if not vazao_col.empty else 0.0
+                    logger.info(f"Média de vazão calculada: {mean_flow}")
                 else:
                     logger.warning("Coluna 'Vazao' NÃO encontrada após o mapeamento!")
 

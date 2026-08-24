@@ -112,8 +112,8 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
         self.ax_vazao.set_ylim(bottom=data_frame['Vazao'].min())
         self.ax_vazao.grid(True, axis='y', linestyle=':', alpha=0.3)
 
-        positive_flow = data_frame[data_frame['Vazao'] > 0]['Vazao']
-        self.mean_flow_value = positive_flow.mean() if not positive_flow.empty else 0.0
+        vazao_col = data_frame['Vazao'].dropna()
+        self.mean_flow_value = vazao_col.mean() if not vazao_col.empty else 0.0
         mean_val = self.mean_flow_value
         self.ax_vazao.axhline(y=mean_val, color='green', linestyle=':', lw=1.2, alpha=0.7,
                              label=f'Média ({mean_val:,.2f})')

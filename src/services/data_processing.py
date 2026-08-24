@@ -92,7 +92,7 @@ class DataProcessingService:
 
         Args:
             file_path: Caminho para o arquivo de dados (CSV ou Excel).
-            medidor_model: O modelo do medidor (ex: \"MV110\", \"XMT1000\") para mapeamento de colunas.
+            medidor_model: O modelo do medidor (ex: "MV110", "XMT1000") para mapeamento de colunas.
         Returns:
             Um DataFrame pandas processado.
         Raises:
@@ -152,8 +152,8 @@ class DataProcessingService:
             - indicadores_gerais (Dict[str, Any]): Indicadores como número de série, datas e total acumulado.
         """
         logger.debug("Calculando métricas do dashboard")
-        positive_flow_values = data_frame[data_frame['Vazao'] > 0]['Vazao']
-        mean_flow = positive_flow_values.mean() if not positive_flow_values.empty else 0.0
+        flow_values = data_frame['Vazao'].dropna()
+        mean_flow = flow_values.mean() if not flow_values.empty else 0.0
         flow_limit = round(mean_flow, 1)
 
         flow_ranges: Dict[str, int] = {
@@ -268,4 +268,3 @@ class DataProcessingService:
         }
 
         return {k: v for k, v in trigger_status.items() if v > 0}
-
