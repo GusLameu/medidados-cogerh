@@ -92,7 +92,7 @@ class DataProcessingService:
 
         Args:
             file_path: Caminho para o arquivo de dados (CSV ou Excel).
-            medidor_model: O modelo do medidor (ex: \"MV110\", \"XMT1000\") para mapeamento de colunas.
+            medidor_model: O modelo do medidor (ex: "MV110", "XMT1000") para mapeamento de colunas.
         Returns:
             Um DataFrame pandas processado.
         Raises:
@@ -268,4 +268,3 @@ class DataProcessingService:
         }
 
         return {k: v for k, v in trigger_status.items() if v > 0}
-
