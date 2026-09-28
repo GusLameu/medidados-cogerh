@@ -178,3 +178,13 @@ MODELO_CONFIG: Dict[str, ModeloConfig] = {
         "show_status_process": False
     }
 }
+# Configurações para detecção de anomalias no totalizado
+ANOMALY_CONFIG = {
+    # Salto mínimo absoluto no totalizado para ser considerado suspeito.
+    # Exemplo: um salto de 10.000 m³ ou mais pode ser anomalia.
+    "absolute_threshold": 10_000.0,
+
+    # Multiplicador aplicado à mediana dos incrementos positivos da campanha.
+    # Exemplo: se o incremento típico for 500, o limite relativo será 500 * 10 = 5.000.
+    "relative_multiplier": 10.0,
+}
