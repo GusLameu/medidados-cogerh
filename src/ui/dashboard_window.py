@@ -25,6 +25,7 @@ from src.services.data_processing import DataProcessingService
 from src.ui.detailed_dashboard_window import DetailedDashboardWindow
 from src.utils.helpers import resource_path
 from src.utils.logger import get_logger
+from src.ui.anomalies_window import AnomaliesWindow
 
 
 logger = get_logger(__name__)
@@ -100,7 +101,7 @@ class DashboardWindow(ctk.CTkToplevel):
         self._last_hover_idx = None
         self._background_cache = None
         self.pie_chart_legends = []
-
+        self.anomalies_df: pd.DataFrame = (DataProcessingService.calculate_total_anomalies(data_frame))
         self.title(f"Medidados - Dashboard: {medidor_type} ({medidor_model})")
         self.state("zoomed")
         self.configure(fg_color="white")
@@ -723,6 +724,16 @@ class DashboardWindow(ctk.CTkToplevel):
                 height=45,
             ).pack(pady=(10, 10), padx=30, fill="x")
 
+        if not self.anomalies_df.empty:
+            ctk.CTkButton(
+                sidebar_frame,
+                text=f"Anomalias ({len(self.anomalies_df)})",
+                command=self._open_anomalies_window,
+                fg_color="#D32F2F",
+                hover_color="#B71C1C",
+                height=45,
+            ).pack(pady=(10, 10), padx=30, fill="x")
+
         ctk.CTkButton(
             sidebar_frame,
             text="Exportar Relatório",
@@ -954,3 +965,15 @@ class DashboardWindow(ctk.CTkToplevel):
         )
         if file_path:
             self.fig.savefig(file_path, dpi=300, bbox_inches="tight")
+
+    def _open_anomalies_window(self) -> None:
+        """Abre a janela com as ocorrências anômalas do totalizado."""
+        if self.anomalies_df.empty:
+            return
+
+        AnomaliesWindow(
+            parent=self,
+            anomalies_df=self.anomalies_df,
+            medidor_model=self.medidor_model,
+            unit=self.unit,
+        )
