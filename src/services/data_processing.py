@@ -350,3 +350,134 @@ class DataProcessingService:
         }
         
         return {k: v for k, v in trigger_status.items() if v > 0}
+
+    @staticmethod
+    def calculate_total_anomalies(
+        data_frame: pd.DataFrame,
+        absolute_threshold: float = 10_000.0,
+        multiplier: float = 10.0,
+    ) -> pd.DataFrame:
+        """
+        Identifica anomalias em leituras acumuladas da coluna Total.
+
+        Uma anomalia pode ser:
+        - Aumento atípico: salto positivo acima do limite calculado.
+        - Possível reset/zeragem: diferença negativa entre leituras consecutivas.
+
+        O limite para aumentos positivos é calculado pelo maior valor entre:
+        `absolute_threshold` e `mediana_das_variacoes_positivas * multiplier`.
+
+        Args:
+            data_frame: DataFrame processado, contendo ao menos Data e Total.
+            absolute_threshold: Limite absoluto mínimo para considerar um salto.
+            multiplier: Multiplicador aplicado à mediana dos incrementos positivos.
+
+        Returns:
+            DataFrame com as colunas Data, Total, TotalAnterior, Variacao,
+            LimiteAnomalia, TipoAnomalia e Severidade.
+        """
+        required_columns = {"Data", "Total"}
+
+        if not required_columns.issubset(data_frame.columns):
+            return pd.DataFrame(
+                columns=[
+                    "Data",
+                    "Total",
+                    "TotalAnterior",
+                    "Variacao",
+                    "LimiteAnomalia",
+                    "TipoAnomalia",
+                    "Severidade",
+                ]
+            )
+
+        analysis_df = (
+            data_frame[["Data", "Total"]]
+            .copy()
+            .dropna(subset=["Data"])
+            .sort_values("Data")
+        )
+
+        analysis_df["Total"] = pd.to_numeric(
+            analysis_df["Total"],
+            errors="coerce",
+        )
+
+        analysis_df = analysis_df.dropna(subset=["Total"])
+
+        if len(analysis_df) < 2:
+            return pd.DataFrame(
+                columns=[
+                    "Data",
+                    "Total",
+                    "TotalAnterior",
+                    "Variacao",
+                    "LimiteAnomalia",
+                    "TipoAnomalia",
+                    "Severidade",
+                ]
+            )
+
+        analysis_df["TotalAnterior"] = analysis_df["Total"].shift(1)
+        analysis_df["Variacao"] = analysis_df["Total"].diff()
+
+        positive_variations = analysis_df.loc[
+            analysis_df["Variacao"] > 0,
+            "Variacao",
+        ]
+
+        median_variation = (
+            float(positive_variations.median())
+            if not positive_variations.empty
+            else 0.0
+        )
+
+        anomaly_limit = max(
+            absolute_threshold,
+            median_variation * multiplier,
+        )
+
+        positive_jump = analysis_df["Variacao"] > anomaly_limit
+        reset_or_negative_jump = analysis_df["Variacao"] < 0
+
+        anomalies = analysis_df.loc[
+            positive_jump | reset_or_negative_jump
+        ].copy()
+
+        if anomalies.empty:
+            return pd.DataFrame(
+                columns=[
+                    "Data",
+                    "Total",
+                    "TotalAnterior",
+                    "Variacao",
+                    "LimiteAnomalia",
+                    "TipoAnomalia",
+                    "Severidade",
+                ]
+            )
+
+        anomalies["LimiteAnomalia"] = anomaly_limit
+        anomalies["TipoAnomalia"] = np.where(
+            anomalies["Variacao"] < 0,
+            "Possível reset/zeragem",
+            "Aumento atípico no totalizado",
+        )
+
+        anomalies["Severidade"] = np.where(
+            anomalies["Variacao"].abs() >= anomaly_limit * 3,
+            "Alta",
+            "Média",
+        )
+
+        return anomalies[
+            [
+                "Data",
+                "Total",
+                "TotalAnterior",
+                "Variacao",
+                "LimiteAnomalia",
+                "TipoAnomalia",
+                "Severidade",
+            ]
+        ].reset_index(drop=True)
