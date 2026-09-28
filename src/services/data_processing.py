@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 import pandas as pd
 import numpy as np
-from src.core.config import MAPA_COLUNAS
+from src.core.config import MAPA_COLUNAS, ANOMALY_CONFIG
 from src.utils.logger import get_logger
 
 
