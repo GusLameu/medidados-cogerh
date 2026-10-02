@@ -2,7 +2,7 @@
 Modulo responsavel pelo carregamento, limpeza e processamento de dados de medidores.
 """
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 import pandas as pd
 import numpy as np
 from src.core.config import MAPA_COLUNAS, ANOMALY_CONFIG
@@ -24,9 +24,6 @@ class GeneralIndicators(TypedDict):
     start_date: pd.Timestamp
     end_date: pd.Timestamp
     total_positive_accumulated: Union[int, float]
-
-
-from typing import TypedDict
 
 
 class DashboardMetrics(TypedDict):
