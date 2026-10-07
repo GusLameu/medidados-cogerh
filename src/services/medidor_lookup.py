@@ -47,10 +47,10 @@ class MedidorLookupService:
         Carrega os dados dos medidores do arquivo Excel.
         
         O arquivo deve conter as colunas:
-        - 'NUMERO_SERIE' ou 'N� SÉ´RIE ELETR�NICA'
-        - 'MODELO' ou 'MODELO ELETR�NICA'
+        - 'NUMERO_SERIE' ou 'N° SÉRIE ELETRÔNICA'
+        - 'MODELO' ou 'MODELO ELETRÔNICA'
         - 'TIPO' ou 'TIPO DE MEDIDOR'
-        - 'LOCAL' ou 'LOCAL INSTALAC�O'
+        - 'LOCAL' ou 'LOCAL INSTALAÇÃO'
         
         Raises:
             FileNotFoundError: Se o arquivo Excel nao for encontrado.
