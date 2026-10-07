@@ -20,13 +20,14 @@ from matplotlib.text import Annotation, Text
 from matplotlib.ticker import FuncFormatter
 from tkinter import filedialog, messagebox
 
-from src.core.config import COR_VAZAO, COR_VELOCIDADE, CORES_ROSCA, MODELO_CONFIG, PIE_COLORS
+from src.core.config import COR_VAZAO, COR_VELOCIDADE, MODELO_CONFIG
 from src.services.data_processing import DataProcessingService
 from src.ui.detailed_dashboard_window import DetailedDashboardWindow
 from src.utils.helpers import resource_path
 from src.utils.logger import get_logger
 from src.ui.anomalies_window import AnomaliesWindow
-
+from src.ui.dashboard.pie_chart_builder import PieChartBuilder
+from src.ui.dashboard.types import WedgeInfoMap
 
 logger = get_logger(__name__)
 
@@ -479,7 +480,7 @@ class DashboardWindow(ctk.CTkToplevel):
             visible=False,
             zorder=101,
         )
-        self.wedges_info_map = {}
+        self.wedges_info_map: WedgeInfoMap = {}
 
         pie_configs: list[PieChartConfig] = []
         col_idx: int = 0
@@ -506,7 +507,17 @@ class DashboardWindow(ctk.CTkToplevel):
             pie_configs.append((trigger_quality, "Qualidade Trigger", (1, col_idx), "qualidade_trigger"))
 
         for data_dict, title, grid_pos, chart_type in pie_configs:
-            self._create_pie_chart(self.fig, gs, data_dict, title, grid_pos, chart_type)
+            result = PieChartBuilder.build(
+                figure=self.fig,
+                grid_spec=gs,
+                data=data_dict,
+                title=title,
+                grid_position=grid_pos,
+                chart_type=chart_type,
+            )
+
+            self.pie_chart_legends.append(result.legend)
+            self.wedges_info_map.update(result.wedge_info_map)
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
         self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
@@ -515,124 +526,7 @@ class DashboardWindow(ctk.CTkToplevel):
 
         self._add_sidebar(data_frame, general_indicators)
 
-    def _create_pie_chart(
-        self,
-        fig: Figure,
-        gs: GridSpec,
-        data_dict: MetricCounts,
-        title: str,
-        grid_pos: tuple[int, int],
-        chart_type: str,
-    ) -> None:
-        """Cria um gráfico de rosca com cores, legendas e percentuais."""
-        ax: Axes = fig.add_subplot(gs[grid_pos[0], grid_pos[1]])
-        values: list[int] = list(data_dict.values())
-        labels: list[str] = list(data_dict.keys())
-        total_sum: int = sum(values) if sum(values) > 0 else 1
-
-        color_config: dict[str, Any] = PIE_COLORS.get(chart_type, {})
-        patterns: dict[str, str] = color_config.get("patterns", {})
-        default_colors: list[str] = color_config.get("default", CORES_ROSCA)
-
-        current_colors: list[str] = []
-        for label in labels:
-            color_assigned: bool = False
-            normalized_label: str = str(label).replace(" ", "").lower()
-
-            for pattern, color in patterns.items():
-                normalized_pattern: str = str(pattern).replace(" ", "").lower()
-                if normalized_pattern in normalized_label:
-                    current_colors.append(color)
-                    color_assigned = True
-                    break
-
-            if not color_assigned:
-                current_colors.append(default_colors[len(current_colors) % len(default_colors)])
-
-        wedges: list[Wedge]
-        wedges, _texts = ax.pie(
-            values,
-            startangle=90,
-            colors=current_colors,
-            wedgeprops={"width": 0.35, "edgecolor": "white"},
-        )
-        ax.set_title(title, fontsize=14, fontweight="bold", pad=25)
-
-        legend: Legend = ax.legend(
-            wedges,
-            labels,
-            title="Categorias",
-            loc="upper center",
-            bbox_to_anchor=(0.5, -0.1),
-            ncol=2,
-            frameon=False,
-            fontsize=9,
-        )
-        self.pie_chart_legends.append(legend)
-
-        annotations_data: list[dict[str, Any]] = []
-        for index, wedge in enumerate(wedges):
-            percentage: float = values[index] / total_sum * 100
-            if percentage < 0.1:
-                continue
-
-            angle_rad: float = (
-                (wedge.theta2 - wedge.theta1) / 2.0 * np.pi / 180.0
-                + wedge.theta1 * np.pi / 180.0
-            )
-            y_coord: float = float(np.sin(angle_rad))
-            x_coord: float = float(np.cos(angle_rad))
-            annotations_data.append(
-                {
-                    "x": x_coord,
-                    "y": y_coord,
-                    "pct": percentage,
-                    "angle": angle_rad,
-                    "wedge": wedge,
-                    "label": labels[index],
-                    "value": values[index],
-                }
-            )
-
-        annotations_data.sort(key=lambda item: float(item["y"]), reverse=True)
-
-        occupied_y_left: list[float] = []
-        occupied_y_right: list[float] = []
-        min_vertical_dist: float = 0.18
-
-        for annotation_data in annotations_data:
-            is_right_side: bool = float(annotation_data["x"]) > 0
-            reference_list: list[float] = occupied_y_right if is_right_side else occupied_y_left
-
-            horizontal_alignment: str = "left" if is_right_side else "right"
-            x_position: float = 1.35 if is_right_side else -1.35
-            y_position: float = 1.3 * float(annotation_data["y"])
-
-            if reference_list:
-                last_y: float = reference_list[-1]
-                if abs(y_position - last_y) < min_vertical_dist:
-                    y_position = last_y - min_vertical_dist
-
-            ax.annotate(
-                f"{float(annotation_data['pct']):.1f}%",
-                xy=(float(annotation_data["x"]), float(annotation_data["y"])),
-                xytext=(x_position, y_position),
-                textcoords="data",
-                ha=horizontal_alignment,
-                fontsize=8,
-                fontweight="bold",
-                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="white", alpha=0.7),
-                arrowprops=dict(arrowstyle="-", color="black", lw=0.5),
-            )
-            reference_list.append(y_position)
-
-            wedge = annotation_data["wedge"]
-            if isinstance(wedge, Wedge):
-                self.wedges_info_map[wedge] = {
-                    "label": annotation_data["label"],
-                    "value": annotation_data["value"],
-                    "total": total_sum,
-                }
+    
 
     def _add_sidebar(
         self,

@@ -67,10 +67,10 @@ class MedidorLookupService:
             
             # Mapear nomes alternativos para nomes padronizados
             column_rename_map: dict[str, str] = {
-                'N� S�RIE ELETR�NICA': 'NUMERO_SERIE',
-                'MODELO ELETR�NICA':   'MODELO',
+                "Nº SÉRIE ELETRÔNICA": "NUMERO_SERIE",
+                'MODELO ELETRÔNICA':   'MODELO',
                 'TIPO DE MEDIDOR':     'TIPO',
-                'LOCAL INSTALAC�O':    'LOCAL',
+                'LOCAL INSTALAÇÃO':    'LOCAL',
             }
             self._medidores_df.rename(columns=column_rename_map, inplace=True)
             
