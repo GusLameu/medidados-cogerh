@@ -27,6 +27,7 @@ from src.utils.helpers import resource_path
 from src.utils.logger import get_logger
 from src.ui.anomalies_window import AnomaliesWindow
 from src.ui.dashboard.pie_chart_builder import PieChartBuilder
+from src.ui.dashboard.sidebar import DashboardSidebar
 from src.ui.dashboard.types import WedgeInfoMap
 
 logger = get_logger(__name__)
@@ -312,7 +313,16 @@ class DashboardWindow(ctk.CTkToplevel):
         self.canvas.mpl_connect("motion_notify_event", self._on_hover)
         self.canvas.mpl_connect("draw_event", self._on_draw)
 
-        self._add_sidebar(data_frame, general_indicators)
+        DashboardSidebar(
+            master=self.container_frame,
+            data_frame=data_frame,
+            medidor_model=self.medidor_model,
+            unit=self.unit,
+            general_indicators=general_indicators,
+            on_open_details=self._open_detailed_dashboard,
+            on_export=self._export_report,
+            on_new_import=self._return_to_import,
+        )
 
     def _setup_complete_layout(
         self,
@@ -524,151 +534,15 @@ class DashboardWindow(ctk.CTkToplevel):
         self.canvas.mpl_connect("motion_notify_event", self._on_hover)
         self.canvas.mpl_connect("draw_event", self._on_draw)
 
-        self._add_sidebar(data_frame, general_indicators)
-
-    
-
-    def _add_sidebar(
-        self,
-        data_frame: pd.DataFrame,
-        general_indicators: Optional[GeneralIndicators] = None,
-    ) -> None:
-        """Adiciona a barra lateral com informações gerais e ações do dashboard."""
-        sidebar_frame: ctk.CTkFrame = ctk.CTkFrame(
-            self.container_frame,
-            width=320,
-            fg_color="#f0f0f0",
-            corner_radius=15,
-        )
-        sidebar_frame.pack(side="right", fill="y", padx=10, pady=20)
-
-        if general_indicators:
-            self._add_info_label(
-                sidebar_frame,
-                "Nº DE SÉRIE",
-                general_indicators.get("serial_number", "N/A"),
-            )
-
-            ctk.CTkLabel(
-                sidebar_frame,
-                text="PERÍODO",
-                font=("Arial", 11, "bold"),
-                text_color="#666666",
-            ).pack(pady=(30, 0))
-
-            if "start_date" in general_indicators and "end_date" in general_indicators:
-                ctk.CTkLabel(
-                    sidebar_frame,
-                    text=(
-                        f"{general_indicators['start_date'].strftime('%d/%m/%Y %H:%M')}\n"
-                        "até\n"
-                        f"{general_indicators['end_date'].strftime('%d/%m/%Y %H:%M')}"
-                    ),
-                    font=("Arial", 12, "bold"),
-                    text_color="#000000",
-                ).pack(pady=5)
-
-            if self.medidor_model.strip().upper() != "MV145":
-                ctk.CTkLabel(
-                    sidebar_frame,
-                    text="TOTAL POSITIVO ≈",
-                    font=("Arial", 11, "bold"),
-                    text_color="#666666",
-                ).pack(pady=(30, 0))
-
-                self.total_label = ctk.CTkLabel(
-                    sidebar_frame,
-                    text="",
-                    font=("Arial", 22, "bold"),
-                    text_color="#000000",
-                )
-                self.total_label.pack(pady=(0, 5))
-                self.general_indicators = general_indicators
-                self._update_total_label()
-        else:
-            ctk.CTkLabel(
-                sidebar_frame,
-                text="PERÍODO",
-                font=("Arial", 11, "bold"),
-                text_color="#666666",
-            ).pack(pady=(30, 0))
-
-            if not data_frame.empty:
-                ctk.CTkLabel(
-                    sidebar_frame,
-                    text=(
-                        f"{data_frame['Data'].min().strftime('%d/%m/%Y %H:%M')}\n"
-                        "até\n"
-                        f"{data_frame['Data'].max().strftime('%d/%m/%Y %H:%M')}"
-                    ),
-                    font=("Arial", 12, "bold"),
-                    text_color="#000000",
-                ).pack(pady=5)
-
-        if (
-            self.medidor_model.strip().upper() == "NF750"
-            and "Area" in data_frame.columns
-            and "Nivel" in data_frame.columns
-        ):
-            ctk.CTkButton(
-                sidebar_frame,
-                text="Detalhar",
-                command=self._open_detailed_dashboard,
-                fg_color=COR_VAZAO,
-                height=45,
-            ).pack(pady=(10, 10), padx=30, fill="x")
-
-        if not self.anomalies_df.empty:
-            ctk.CTkButton(
-                sidebar_frame,
-                text=f"Anomalias ({len(self.anomalies_df)})",
-                command=self._open_anomalies_window,
-                fg_color="#D32F2F",
-                hover_color="#B71C1C",
-                height=45,
-            ).pack(pady=(10, 10), padx=30, fill="x")
-
-        ctk.CTkButton(
-            sidebar_frame,
-            text="Exportar Relatório",
-            command=self._export_report,
-            fg_color=COR_VAZAO,
-            height=45,
-        ).pack(pady=(10, 10), padx=30, fill="x")
-
-        ctk.CTkButton(
-            sidebar_frame,
-            text="Nova Importação",
-            command=self._return_to_import,
-            fg_color="#6c757d",
-            height=45,
-        ).pack(pady=10, padx=30, fill="x")
-
-    def _add_info_label(self, master_frame: ctk.CTkFrame, title: str, value: Any) -> None:
-        """Adiciona um par de labels de título e valor ao frame informado."""
-        ctk.CTkLabel(
-            master_frame,
-            text=title,
-            font=("Arial", 11, "bold"),
-            text_color="#666666",
-        ).pack(pady=(30, 0))
-        ctk.CTkLabel(
-            master_frame,
-            text=str(value),
-            font=("Arial", 22, "bold"),
-            text_color="#000000",
-        ).pack(pady=(0, 5))
-
-    def _update_total_label(self) -> None:
-        """Atualiza o label do total positivo conforme a unidade selecionada."""
-        if not hasattr(self, "total_label") or not hasattr(self, "general_indicators"):
-            return
-
-        total_value: Any = self.general_indicators.get("total_positive_accumulated", 0)
-        unit_display: str = "L" if self.unit == "l/s" else "m³"
-
-        self.total_label.configure(
-            text=f"{float(total_value):,.0f} {unit_display}".replace(",", ".")
+        DashboardSidebar(
+            master=self.container_frame,
+            data_frame=data_frame,
+            medidor_model=self.medidor_model,
+            unit=self.unit,
+            general_indicators=general_indicators,
+            on_open_details=self._open_detailed_dashboard,
+            on_export=self._export_report,
+            on_new_import=self._return_to_import,
         )
 
     def _redraw_static_elements(self) -> None:
