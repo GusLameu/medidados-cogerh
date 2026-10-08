@@ -17,7 +17,6 @@ from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.patches import Wedge
 from matplotlib.text import Annotation, Text
-from matplotlib.ticker import FuncFormatter
 from tkinter import filedialog, messagebox
 
 from src.core.config import COR_VAZAO, COR_VELOCIDADE, MODELO_CONFIG
@@ -27,8 +26,10 @@ from src.utils.helpers import resource_path
 from src.utils.logger import get_logger
 from src.ui.anomalies_window import AnomaliesWindow
 from src.ui.dashboard.pie_chart_builder import PieChartBuilder
+from src.ui.dashboard.chart_builder import MainChartBuilder
 from src.ui.dashboard.sidebar import DashboardSidebar
-from src.ui.dashboard.types import WedgeInfoMap
+from src.ui.dashboard.types import WedgeInfoMap, MainChartResult
+
 
 logger = get_logger(__name__)
 
@@ -189,91 +190,21 @@ class DashboardWindow(ctk.CTkToplevel):
     ) -> None:
         """Configura o layout simplificado de vazão e volume do MV145."""
         self.fig = plt.figure(figsize=(16, 8), dpi=100)
-        self.fig.subplots_adjust(top=0.82, bottom=0.10, left=0.07, right=0.93)
 
-        self.ax_flow_speed = self.fig.add_subplot(111)
-
-        self.line_flow, = self.ax_flow_speed.plot(
-            data_frame["Data"],
-            data_frame["Vazao"],
-            label="VAZÃO",
-            color=COR_VAZAO,
-            lw=1.5,
-        )
-        self.ax_flow_speed.fill_between(
-            data_frame["Data"],
-            data_frame["Vazao"],
-            color=COR_VAZAO,
-            alpha=0.08,
-        )
-        self.ax_flow_speed.set_ylabel(
-            f"Vazão ({self.unit})",
-            color=COR_VAZAO,
-            fontsize=12,
-            fontweight="bold",
-        )
-        self.ax_flow_speed.set_title(
-            f"MONITORAMENTO DE VAZÃO E VOLUME - {medidor_type} ({self.medidor_model})",
-            fontsize=18,
-            fontweight="bold",
-            pad=70,
-        )
-        self.ax_flow_speed.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%Y"))
-        self.ax_flow_speed.set_xlim(data_frame["Data"].min(), data_frame["Data"].max())
-
-        max_flow: float = float(data_frame["Vazao"].max()) if not data_frame["Vazao"].empty else 1.0
-        self.ax_flow_speed.set_ylim(-max_flow * 0.05, max_flow * 1.3)
-        self.ax_flow_speed.grid(True, axis="y", linestyle=":", alpha=0.3)
-
-        flow_values: pd.Series = data_frame["Vazao"].dropna()
-        self.mean_flow_value = float(flow_values.mean()) if not flow_values.empty else 0.0
-        self.ax_flow_speed.axhline(
-            y=self.mean_flow_value,
-            color="green",
-            linestyle=":",
-            lw=1.5,
-            alpha=0.7,
-            label=f"MÉDIA ({self.mean_flow_value:,.2f})",
+        chart_result: MainChartResult = MainChartBuilder.build_simplified(
+            figure=self.fig,
+            data_frame=data_frame,
+            medidor_model=self.medidor_model,
+            medidor_type=medidor_type,
+            unit=self.unit,
         )
 
-        self.ax_speed_twin = None
-        self.line_speed = None
-
-        if "Volume" in data_frame.columns and not data_frame["Volume"].isna().all():
-            self.ax_speed_twin = self.ax_flow_speed.twinx()
-            self.line_speed, = self.ax_speed_twin.plot(
-                data_frame["Data"],
-                data_frame["Volume"],
-                label="VOLUME",
-                color="#2E7D32",
-                lw=1.5,
-                linestyle="--",
-            )
-            self.ax_speed_twin.set_ylabel(
-                "Volume (m³)",
-                color="#2E7D32",
-                fontsize=12,
-                fontweight="bold",
-            )
-            lines1, labels1 = self.ax_flow_speed.get_legend_handles_labels()
-            lines2, labels2 = self.ax_speed_twin.get_legend_handles_labels()
-            self.main_legend = self.ax_flow_speed.legend(
-                lines1 + lines2,
-                labels1 + labels2,
-                loc="upper center",
-                bbox_to_anchor=(0.5, 1.08),
-                ncol=3,
-                frameon=False,
-                fontsize=10,
-            )
-        else:
-            self.main_legend = self.ax_flow_speed.legend(
-                loc="upper center",
-                bbox_to_anchor=(0.5, 1.08),
-                ncol=2,
-                frameon=False,
-                fontsize=10,
-            )
+        self.ax_flow_speed = chart_result.flow_axis
+        self.ax_speed_twin = chart_result.secondary_axis
+        self.line_flow = chart_result.flow_line
+        self.line_speed = chart_result.secondary_line
+        self.main_legend = chart_result.legend
+        self.mean_flow_value = chart_result.mean_flow
 
         if "Volume" not in data_frame.columns:
             logger.warning(
@@ -289,29 +220,57 @@ class DashboardWindow(ctk.CTkToplevel):
             visible=False,
             zorder=5,
         )
+
         self.annotation_line = self.ax_flow_speed.annotate(
             "",
             xy=(0, 0),
             xytext=(20, 0),
             textcoords="offset points",
-            bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
+            bbox=dict(
+                boxstyle="round,pad=0.5",
+                fc="white",
+                ec="black",
+                lw=1,
+                alpha=0.98,
+            ),
             zorder=100,
             visible=False,
             clip_on=False,
         )
+
         self.annotation_pie = self.fig.text(
             0,
             0,
             "",
-            bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
+            bbox=dict(
+                boxstyle="round,pad=0.5",
+                fc="white",
+                ec="black",
+                lw=1,
+                alpha=0.98,
+            ),
             visible=False,
             zorder=101,
         )
 
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
-        self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
-        self.canvas.mpl_connect("motion_notify_event", self._on_hover)
-        self.canvas.mpl_connect("draw_event", self._on_draw)
+        self.canvas = FigureCanvasTkAgg(
+            self.fig,
+            master=self.container_frame,
+        )
+        self.canvas.get_tk_widget().pack(
+            side="left",
+            fill="both",
+            expand=True,
+        )
+
+        self.canvas.mpl_connect(
+            "motion_notify_event",
+            self._on_hover,
+        )
+        self.canvas.mpl_connect(
+            "draw_event",
+            self._on_draw,
+        )
 
         DashboardSidebar(
             master=self.container_frame,
@@ -372,97 +331,28 @@ class DashboardWindow(ctk.CTkToplevel):
                 bottom=0.15,
             )
         else:
-            gs = self.fig.add_gridspec(1, 1, top=0.82, bottom=0.15)
+            gs = self.fig.add_gridspec(
+                1,
+                1,
+                top=0.82,
+                bottom=0.15,
+            )
 
-        self.ax_flow_speed = self.fig.add_subplot(gs[0, :])
-        self.ax_speed_twin = self.ax_flow_speed.twinx()
-
-        self.ax_flow_speed.set_zorder(self.ax_speed_twin.get_zorder() + 1)
-        self.ax_flow_speed.set_frame_on(False)
-        for spine in self.ax_flow_speed.spines.values():
-            spine.set_zorder(0)
-
-        def format_mil(value: float, _position: Any) -> str:
-            """Formata valores de vazão acima de mil para o eixo Y."""
-            return f"{value / 1000:,.1f}mil".replace(".", ",") if value >= 1000 else str(int(value))
-
-        self.ax_flow_speed.yaxis.set_major_formatter(FuncFormatter(format_mil))
-        self.ax_flow_speed.set_ylabel(
-            f"Vazão ({self.unit})",
-            color=COR_VAZAO,
-            fontsize=12,
-            fontweight="bold",
-        )
-        self.ax_speed_twin.set_ylabel(
-            "Velocidade (m/s)",
-            color=COR_VELOCIDADE,
-            fontsize=12,
-            fontweight="bold",
-        )
-        self.ax_flow_speed.set_title(
-            f"MONITORAMENTO DE VAZÃO E VELOCIDADE - {medidor_type} ({self.medidor_model})",
-            fontsize=18,
-            fontweight="bold",
-            pad=55,
-        )
-        self.ax_flow_speed.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%Y"))
-        self.ax_flow_speed.set_xlim(data_frame["Data"].min(), data_frame["Data"].max())
-
-        max_flow: float = float(data_frame["Vazao"].max()) if not data_frame["Vazao"].empty else 1.0
-        max_speed: float = (
-            float(data_frame["Velocidade"].max())
-            if "Velocidade" in data_frame.columns and not data_frame["Velocidade"].empty
-            else 1.0
-        )
-        self.ax_flow_speed.set_ylim(0, max_flow * 1.3)
-        self.ax_speed_twin.set_ylim(0, max_speed * 2.8)
-
-        self.line_flow, = self.ax_flow_speed.plot(
-            data_frame["Data"],
-            data_frame["Vazao"],
-            label="VAZÃO",
-            color=COR_VAZAO,
-            lw=1.0,
-        )
-        self.ax_flow_speed.fill_between(
-            data_frame["Data"],
-            data_frame["Vazao"],
-            color=COR_VAZAO,
-            alpha=0.08,
-        )
-        self.line_speed, = self.ax_speed_twin.plot(
-            data_frame["Data"],
-            data_frame["Velocidade"],
-            label="VELOCIDADE",
-            color=COR_VELOCIDADE,
-            lw=0.8,
-            linestyle="--",
+        chart_result: MainChartResult = MainChartBuilder.build_complete(
+            figure=self.fig,
+            grid_spec=gs,
+            data_frame=data_frame,
+            medidor_model=self.medidor_model,
+            medidor_type=medidor_type,
+            unit=self.unit,
         )
 
-        flow_values: pd.Series = data_frame["Vazao"].dropna()
-        self.mean_flow_value = float(flow_values.mean()) if not flow_values.empty else 0.0
-        self.ax_flow_speed.axhline(
-            y=self.mean_flow_value,
-            color="green",
-            linestyle=":",
-            lw=1.5,
-            alpha=0.7,
-            label=f"MÉDIA ({self.mean_flow_value:,.2f})",
-        )
-
-        lines1, labels1 = self.ax_flow_speed.get_legend_handles_labels()
-        lines2, labels2 = self.ax_speed_twin.get_legend_handles_labels()
-        self.main_legend = self.ax_flow_speed.legend(
-            lines1 + lines2,
-            labels1 + labels2,
-            loc="upper center",
-            bbox_to_anchor=(0.5, 1.18),
-            ncol=3,
-            frameon=False,
-            fontsize=10,
-        )
-
-        self.ax_flow_speed.grid(True, axis="y", linestyle=":", alpha=0.3)
+        self.ax_flow_speed = chart_result.flow_axis
+        self.ax_speed_twin = chart_result.secondary_axis
+        self.line_flow = chart_result.flow_line
+        self.line_speed = chart_result.secondary_line
+        self.main_legend = chart_result.legend
+        self.mean_flow_value = chart_result.mean_flow
 
         self.vertical_line = self.ax_flow_speed.axvline(
             x=data_frame["Data"].iloc[0],
@@ -472,49 +362,92 @@ class DashboardWindow(ctk.CTkToplevel):
             visible=False,
             zorder=5,
         )
+
         self.annotation_line = self.ax_flow_speed.annotate(
             "",
             xy=(0, 0),
             xytext=(20, 35),
             textcoords="offset points",
-            bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
+            bbox=dict(
+                boxstyle="round,pad=0.5",
+                fc="white",
+                ec="black",
+                lw=1,
+                alpha=0.98,
+            ),
             zorder=100,
             visible=False,
             clip_on=False,
         )
+
         self.annotation_pie = self.fig.text(
             0,
             0,
             "",
-            bbox=dict(boxstyle="round,pad=0.5", fc="white", ec="black", lw=1, alpha=0.98),
+            bbox=dict(
+                boxstyle="round,pad=0.5",
+                fc="white",
+                ec="black",
+                lw=1,
+                alpha=0.98,
+            ),
             visible=False,
             zorder=101,
         )
+
         self.wedges_info_map: WedgeInfoMap = {}
 
         pie_configs: list[PieChartConfig] = []
         col_idx: int = 0
 
         if "vazao" in self.model_config["pie_charts"]:
-            pie_configs.append((flow_ranges, "Faixa de Vazão", (1, col_idx), "vazao"))
+            pie_configs.append(
+                (flow_ranges, "Faixa de Vazão", (1, col_idx), "vazao")
+            )
             col_idx += 1
 
         if "qualidade" in self.model_config["pie_charts"]:
-            pie_configs.append((data_quality, "Qualidade Telemetria", (1, col_idx), "qualidade"))
+            pie_configs.append(
+                (
+                    data_quality,
+                    "Qualidade Telemetria",
+                    (1, col_idx),
+                    "qualidade",
+                )
+            )
             col_idx += 1
 
         if "status_process" in self.model_config["pie_charts"]:
-            pie_configs.append((process_status, "Status de Processo", (1, col_idx), "status_process"))
+            pie_configs.append(
+                (
+                    process_status,
+                    "Status de Processo",
+                    (1, col_idx),
+                    "status_process",
+                )
+            )
             col_idx += 1
 
         if "status_hidraulico" in self.model_config["pie_charts"]:
             pie_configs.append(
-                (hydraulic_status, "Qualidade Hidráulica", (1, col_idx), "status_hidraulico")
+                (
+                    hydraulic_status,
+                    "Qualidade Hidráulica",
+                    (1, col_idx),
+                    "status_hidraulico",
+                )
             )
             col_idx += 1
 
         if "qualidade_trigger" in self.model_config["pie_charts"]:
-            pie_configs.append((trigger_quality, "Qualidade Trigger", (1, col_idx), "qualidade_trigger"))
+            pie_configs.append(
+                (
+                    trigger_quality,
+                    "Qualidade Trigger",
+                    (1, col_idx),
+                    "qualidade_trigger",
+                )
+            )
 
         for data_dict, title, grid_pos, chart_type in pie_configs:
             result = PieChartBuilder.build(
@@ -529,10 +462,24 @@ class DashboardWindow(ctk.CTkToplevel):
             self.pie_chart_legends.append(result.legend)
             self.wedges_info_map.update(result.wedge_info_map)
 
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.container_frame)
-        self.canvas.get_tk_widget().pack(side="left", fill="both", expand=True)
-        self.canvas.mpl_connect("motion_notify_event", self._on_hover)
-        self.canvas.mpl_connect("draw_event", self._on_draw)
+        self.canvas = FigureCanvasTkAgg(
+            self.fig,
+            master=self.container_frame,
+        )
+        self.canvas.get_tk_widget().pack(
+            side="left",
+            fill="both",
+            expand=True,
+        )
+
+        self.canvas.mpl_connect(
+            "motion_notify_event",
+            self._on_hover,
+        )
+        self.canvas.mpl_connect(
+            "draw_event",
+            self._on_draw,
+        )
 
         DashboardSidebar(
             master=self.container_frame,
