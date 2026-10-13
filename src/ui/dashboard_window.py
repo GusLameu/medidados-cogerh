@@ -4,9 +4,7 @@ Módulo responsável pela janela do dashboard que exibe os gráficos e métricas
 from typing import Any, Optional, TypeAlias
 
 import customtkinter as ctk
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import DrawEvent, MouseEvent
@@ -29,6 +27,7 @@ from src.ui.dashboard.pie_chart_builder import PieChartBuilder
 from src.ui.dashboard.chart_builder import MainChartBuilder
 from src.ui.dashboard.sidebar import DashboardSidebar
 from src.ui.dashboard.types import WedgeInfoMap, MainChartResult
+from src.ui.dashboard.hover_controller import DashboardHoverController
 
 
 logger = get_logger(__name__)
@@ -70,6 +69,7 @@ class DashboardWindow(ctk.CTkToplevel):
     vertical_line: Line2D
     annotation_line: Annotation
     annotation_pie: Text
+    
 
     mean_flow_value: float
     wedges_info_map: dict[Wedge, WedgeInfo]
@@ -101,8 +101,6 @@ class DashboardWindow(ctk.CTkToplevel):
         self.parent = parent
         self.medidor_model = medidor_model
         self.data_frame = data_frame
-        self._last_hover_idx = None
-        self._background_cache = None
         self.pie_chart_legends = []
         self.anomalies_df: pd.DataFrame = (DataProcessingService.calculate_total_anomalies(data_frame))
         self.title(f"Medidados - Dashboard: {medidor_type} ({medidor_model})")
@@ -212,47 +210,6 @@ class DashboardWindow(ctk.CTkToplevel):
                 "Gráfico de volume não será exibido."
             )
 
-        self.vertical_line = self.ax_flow_speed.axvline(
-            x=data_frame["Data"].iloc[0],
-            color="#333333",
-            alpha=0.3,
-            lw=0.8,
-            visible=False,
-            zorder=5,
-        )
-
-        self.annotation_line = self.ax_flow_speed.annotate(
-            "",
-            xy=(0, 0),
-            xytext=(20, 0),
-            textcoords="offset points",
-            bbox=dict(
-                boxstyle="round,pad=0.5",
-                fc="white",
-                ec="black",
-                lw=1,
-                alpha=0.98,
-            ),
-            zorder=100,
-            visible=False,
-            clip_on=False,
-        )
-
-        self.annotation_pie = self.fig.text(
-            0,
-            0,
-            "",
-            bbox=dict(
-                boxstyle="round,pad=0.5",
-                fc="white",
-                ec="black",
-                lw=1,
-                alpha=0.98,
-            ),
-            visible=False,
-            zorder=101,
-        )
-
         self.canvas = FigureCanvasTkAgg(
             self.fig,
             master=self.container_frame,
@@ -263,13 +220,29 @@ class DashboardWindow(ctk.CTkToplevel):
             expand=True,
         )
 
+        self.hover_controller = DashboardHoverController(
+            canvas=self.canvas,
+            figure=self.fig,
+            flow_axis=self.ax_flow_speed,
+            secondary_axis=self.ax_speed_twin,
+            flow_line=self.line_flow,
+            secondary_line=self.line_speed,
+            main_legend=self.main_legend,
+            pie_legends=self.pie_chart_legends,
+            wedge_info_map=getattr(self, "wedges_info_map", {}),
+            unit=self.unit,
+            medidor_model=self.medidor_model,
+            mean_flow=self.mean_flow_value,
+        )
+
         self.canvas.mpl_connect(
             "motion_notify_event",
-            self._on_hover,
+            self.hover_controller.on_hover,
         )
+
         self.canvas.mpl_connect(
             "draw_event",
-            self._on_draw,
+            self.hover_controller.on_draw,
         )
 
         DashboardSidebar(
@@ -354,47 +327,6 @@ class DashboardWindow(ctk.CTkToplevel):
         self.main_legend = chart_result.legend
         self.mean_flow_value = chart_result.mean_flow
 
-        self.vertical_line = self.ax_flow_speed.axvline(
-            x=data_frame["Data"].iloc[0],
-            color="#333333",
-            alpha=0.3,
-            lw=0.8,
-            visible=False,
-            zorder=5,
-        )
-
-        self.annotation_line = self.ax_flow_speed.annotate(
-            "",
-            xy=(0, 0),
-            xytext=(20, 35),
-            textcoords="offset points",
-            bbox=dict(
-                boxstyle="round,pad=0.5",
-                fc="white",
-                ec="black",
-                lw=1,
-                alpha=0.98,
-            ),
-            zorder=100,
-            visible=False,
-            clip_on=False,
-        )
-
-        self.annotation_pie = self.fig.text(
-            0,
-            0,
-            "",
-            bbox=dict(
-                boxstyle="round,pad=0.5",
-                fc="white",
-                ec="black",
-                lw=1,
-                alpha=0.98,
-            ),
-            visible=False,
-            zorder=101,
-        )
-
         self.wedges_info_map: WedgeInfoMap = {}
 
         pie_configs: list[PieChartConfig] = []
@@ -472,13 +404,29 @@ class DashboardWindow(ctk.CTkToplevel):
             expand=True,
         )
 
+        self.hover_controller = DashboardHoverController(
+            canvas=self.canvas,
+            figure=self.fig,
+            flow_axis=self.ax_flow_speed,
+            secondary_axis=self.ax_speed_twin,
+            flow_line=self.line_flow,
+            secondary_line=self.line_speed,
+            main_legend=self.main_legend,
+            pie_legends=self.pie_chart_legends,
+            wedge_info_map=getattr(self, "wedges_info_map", {}),
+            unit=self.unit,
+            medidor_model=self.medidor_model,
+            mean_flow=self.mean_flow_value,
+        )
+
         self.canvas.mpl_connect(
             "motion_notify_event",
-            self._on_hover,
+            self.hover_controller.on_hover,
         )
+
         self.canvas.mpl_connect(
             "draw_event",
-            self._on_draw,
+            self.hover_controller.on_draw,
         )
 
         DashboardSidebar(
@@ -511,127 +459,6 @@ class DashboardWindow(ctk.CTkToplevel):
 
         self._redraw_static_elements()
         self._background_cache = self.canvas.copy_from_bbox(self.fig.bbox)
-
-    def _on_hover(self, event: MouseEvent) -> None:
-        """Atualiza tooltips para gráfico principal e gráficos de rosca."""
-        if event.inaxes is None or event.xdata is None:
-            if (
-                hasattr(self, "vertical_line")
-                and (
-                    self.vertical_line.get_visible()
-                    or self.annotation_line.get_visible()
-                    or self.annotation_pie.get_visible()
-                )
-            ):
-                if self._background_cache is not None:
-                    self.canvas.restore_region(self._background_cache)
-                self._redraw_static_elements()
-                self.canvas.blit(self.fig.bbox)
-
-            if hasattr(self, "vertical_line"):
-                self.vertical_line.set_visible(False)
-                self.annotation_line.set_visible(False)
-                self.annotation_pie.set_visible(False)
-
-            self._last_hover_idx = None
-            return
-
-        if (
-            hasattr(self, "ax_flow_speed")
-            and event.inaxes in [self.ax_flow_speed, self.ax_speed_twin]
-        ):
-            x_data, y_flow = self.line_flow.get_data()
-            x_num: np.ndarray[Any, Any] = mdates.date2num(x_data)
-            index: int = int(np.abs(x_num - event.xdata).argmin())
-
-            if index == self._last_hover_idx:
-                return
-
-            self._last_hover_idx = index
-            date_at: Any = x_data[index]
-            flow_val: float = float(y_flow[index])
-            xlim: tuple[float, float] = self.ax_flow_speed.get_xlim()
-            ylim: tuple[float, float] = self.ax_flow_speed.get_ylim()
-
-            offset_x: int = (
-                -175
-                if event.xdata > (xlim[0] + (xlim[1] - xlim[0]) * 0.7)
-                else 25
-            )
-            offset_y: int = 35 if flow_val < (ylim[1] * 0.6) else -110
-
-            self.vertical_line.set_xdata([date_at, date_at])
-            self.vertical_line.set_visible(True)
-            self.annotation_line.xy = (date_at, flow_val)
-            self.annotation_line.set_position((offset_x, offset_y))
-
-            if self.line_speed is not None:
-                extra_val: float = float(self.line_speed.get_data()[1][index])
-                extra_label: str = "VOLUME" if self.medidor_model == "MV145" else "VELOCIDADE"
-                extra_unit: str = "m³" if self.medidor_model == "MV145" else "m/s"
-                tooltip_text: str = (
-                    f"DATA: {pd.Timestamp(date_at).strftime('%d/%m/%Y %H:%M')}\n"
-                    f"VAZÃO: {flow_val:,.2f} {self.unit}\n"
-                    f"MÉDIA: {self.mean_flow_value:,.2f} {self.unit}\n"
-                    f"{extra_label}: {extra_val:,.2f} {extra_unit}"
-                )
-            else:
-                tooltip_text = (
-                    f"DATA: {pd.Timestamp(date_at).strftime('%d/%m/%Y %H:%M')}\n"
-                    f"VAZÃO: {flow_val:,.2f} {self.unit}\n"
-                    f"MÉDIA: {self.mean_flow_value:,.2f} {self.unit}"
-                )
-
-            self.annotation_line.set_text(tooltip_text)
-            self.annotation_line.set_visible(True)
-            self.annotation_pie.set_visible(False)
-
-            if self._background_cache is not None:
-                self.canvas.restore_region(self._background_cache)
-
-            self._redraw_static_elements()
-            self.ax_flow_speed.draw_artist(self.vertical_line)
-            self.ax_flow_speed.draw_artist(self.annotation_line)
-            self.canvas.blit(self.fig.bbox)
-            return
-
-        if not hasattr(self, "wedges_info_map"):
-            return
-
-        found_pie_wedge: bool = False
-        for wedge, info in self.wedges_info_map.items():
-            if wedge.contains_point([event.x, event.y]):
-                total: float = float(info["total"]) if info["total"] > 0 else 1.0
-                percentage: float = float(info["value"]) / total * 100
-                self.annotation_pie.set_text(
-                    f"CATEGORIA: {info['label']}\nPERCENTUAL: {percentage:.1f}%"
-                )
-                self.annotation_pie.set_position(
-                    (
-                        event.x / self.fig.bbox.width + 0.01,
-                        event.y / self.fig.bbox.height + 0.01,
-                    )
-                )
-                self.annotation_pie.set_visible(True)
-                self.vertical_line.set_visible(False)
-                self.annotation_line.set_visible(False)
-
-                if self._background_cache is not None:
-                    self.canvas.restore_region(self._background_cache)
-
-                self._redraw_static_elements()
-                self.fig.draw_artist(self.annotation_pie)
-                self.canvas.blit(self.fig.bbox)
-                self._last_hover_idx = None
-                found_pie_wedge = True
-                break
-
-        if not found_pie_wedge and self.annotation_pie.get_visible():
-            self.annotation_pie.set_visible(False)
-            if self._background_cache is not None:
-                self.canvas.restore_region(self._background_cache)
-            self._redraw_static_elements()
-            self.canvas.blit(self.fig.bbox)
 
     def _open_detailed_dashboard(self) -> None:
         """Abre o dashboard detalhado com vazão, velocidade, nível e área."""

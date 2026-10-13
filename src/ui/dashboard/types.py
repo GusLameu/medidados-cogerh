@@ -8,6 +8,7 @@ from matplotlib.axes import Axes
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.patches import Wedge
+from matplotlib.text import Annotation, Text
 
 
 MetricCounts: TypeAlias = dict[str, int]
@@ -16,6 +17,8 @@ WedgeInfo: TypeAlias = dict[str, Any]
 WedgeInfoMap: TypeAlias = dict[Wedge, WedgeInfo]
 PieChartPosition: TypeAlias = tuple[int, int]
 PieChartLegendList: TypeAlias = list[Legend]
+CanvasBackground: TypeAlias = Any
+PieChartLegends: TypeAlias = list[Legend]
 
 
 @dataclass
