@@ -381,8 +381,10 @@ class DashboardWindow(ctk.CTkToplevel):
                 )
             )
 
+        self.wedges_info_map: WedgeInfoMap = {}
+
         for data_dict, title, grid_pos, chart_type in pie_configs:
-            result = PieChartBuilder.build(
+            pie_result = PieChartBuilder.build(
                 figure=self.fig,
                 grid_spec=gs,
                 data=data_dict,
@@ -391,8 +393,8 @@ class DashboardWindow(ctk.CTkToplevel):
                 chart_type=chart_type,
             )
 
-            self.pie_chart_legends.append(result.legend)
-            self.wedges_info_map.update(result.wedge_info_map)
+            self.pie_chart_legends.append(pie_result.legend)
+            self.wedges_info_map.update(pie_result.wedge_info_map)
 
         self.canvas = FigureCanvasTkAgg(
             self.fig,

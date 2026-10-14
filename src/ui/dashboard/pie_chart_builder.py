@@ -58,6 +58,9 @@ class PieChartBuilder:
         Returns:
             Objeto contendo eixo, legenda e informações das fatias para hover.
         """
+
+        
+
         axis: Axes = figure.add_subplot(
             grid_spec[grid_position[0], grid_position[1]]
         )
@@ -128,8 +131,17 @@ class PieChartBuilder:
         annotations_data: list[dict[str, Any]] = []
 
         for index, wedge in enumerate(wedges):
+            # Cada fatia é vinculada à sua própria categoria e contagem.
+            wedge_info_map[wedge] = {
+                "label": labels[index],
+                "value": values[index],
+                "total": total_sum,
+            }
+
             percentage: float = values[index] / total_sum * 100
 
+            # Oculta apenas o rótulo percentual de fatias muito pequenas.
+            # O cadastro para hover já foi feito acima.
             if percentage < 0.1:
                 continue
 
@@ -206,11 +218,12 @@ class PieChartBuilder:
 
             occupied_positions.append(y_position)
 
-            wedge_info_map[wedge] = {
-                "label": annotation["label"],
-                "value": annotation["value"],
-                "total": total_sum,
-            }
+        print(
+            f"[DIAGNOSTICO] {title} | "
+            f"fatias desenhadas: {len(wedges)} | "
+            f"fatias cadastradas: {len(wedge_info_map)}",
+            flush=True,
+        )
 
         return PieChartResult(
             axis=axis,

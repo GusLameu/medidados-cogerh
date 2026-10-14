@@ -118,6 +118,12 @@ class DashboardHoverController:
             zorder=101,
         )
 
+        print(
+            "[DIAGNOSTICO] HoverController criado | "
+            f"fatias cadastradas: {len(self.wedge_info_map)}",
+            flush=True,
+        )
+
     def _redraw_static_elements(self) -> None:
         """
         Redesenha as legendas após a restauração do cache do canvas.
@@ -261,23 +267,39 @@ class DashboardHoverController:
 
     def _handle_pie_hover(self, event: MouseEvent) -> None:
         """
-        Localiza a fatia de rosca sob o mouse e exibe seu tooltip.
+        Localiza a fatia da rosca sob o mouse e exibe seu tooltip.
+
+        A busca é limitada ao eixo onde o cursor está. Isso evita que uma fatia
+        de outra rosca seja identificada quando há mais de um pie chart na figura.
         """
+        if event.inaxes is None:
+            self._hide_pie_annotation()
+            return
+
+        current_axis: Axes = event.inaxes
         found_wedge: bool = False
 
         for wedge, info in self.wedge_info_map.items():
-            if not wedge.contains_point([event.x, event.y]):
+            # Só avalia fatias pertencentes ao gráfico de rosca atual.
+            if wedge.axes is not current_axis:
+                continue
+
+            # event.x e event.y estão em coordenadas de tela/display, que é
+            # exatamente o sistema de coordenadas esperado por contains_point().
+            if not wedge.contains_point((event.x, event.y)):
                 continue
 
             total: float = float(info["total"])
+            value: float = float(info["value"])
 
             if total <= 0:
                 total = 1.0
 
-            percentage: float = float(info["value"]) / total * 100
+            percentage: float = value / total * 100
 
             self.annotation_pie.set_text(
                 f"CATEGORIA: {info['label']}\n"
+                f"VALOR: {value:,.0f}\n"
                 f"PERCENTUAL: {percentage:.1f}%"
             )
 
@@ -303,15 +325,24 @@ class DashboardHoverController:
             found_wedge = True
             break
 
-        if not found_wedge and self.annotation_pie.get_visible():
-            self.annotation_pie.set_visible(False)
+        if not found_wedge:
+            self._hide_pie_annotation()
 
-            if self._background_cache is not None:
-                self.canvas.restore_region(self._background_cache)
+    def _hide_pie_annotation(self) -> None:
+        """
+        Oculta somente o tooltip das roscas e restaura o canvas.
+        """
+        if not self.annotation_pie.get_visible():
+            return
 
-            self._redraw_static_elements()
-            self.canvas.blit(self.figure.bbox)
+        self.annotation_pie.set_visible(False)
 
+        if self._background_cache is not None:
+            self.canvas.restore_region(self._background_cache)
+
+        self._redraw_static_elements()
+        self.canvas.blit(self.figure.bbox)
+    
     def _hide_annotations(self) -> None:
         """
         Oculta os tooltips quando o mouse sai dos gráficos.
