@@ -116,7 +116,7 @@ class ConfirmationDialog(ctk.CTkToplevel):
         # Display de vazao
         self.label_vazao: ctk.CTkLabel = ctk.CTkLabel(
             self, 
-            text=f"Vazao Media: {self.vazao_media_original:.2f} m�/h", 
+            text=f"Vazao Media: {self.vazao_media_original:.2f} m³/h", 
             font=("Arial", 14, "bold"), 
             text_color="black"
         )
@@ -169,7 +169,7 @@ class ConfirmationDialog(ctk.CTkToplevel):
         Atualiza o display de vazao quando unidade e alterada.
         
         Args:
-            new_unit: Nova unidade selecionada (m�/h, m�/s, l/s).
+            new_unit: Nova unidade selecionada (m³/h, m³/s, l/s).
         """
         self.selected_unit = new_unit
         self.label_vazao.configure(

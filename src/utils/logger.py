@@ -30,7 +30,7 @@ def setup_logging(log_file_name: str = "medidados.log") -> logging.Logger:
     )
     
     logger: logging.Logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
     
     if logger.hasHandlers():
         logger.handlers.clear()
