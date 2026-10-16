@@ -193,10 +193,13 @@ class DataProcessingService:
         # 6. Converter colunas numericas
         for col in DataProcessingService.NUMERIC_COLUMNS:
             if col in df.columns:
-                df[col] = pd.to_numeric(
-                    df[col].astype(str).str.replace(',', '.'), 
-                    errors='coerce'
-                ).fillna(0)
+                converted = pd.to_numeric(
+                    df[col].astype(str).str.replace(",", ".", regex=False),
+                    errors="coerce",
+                )
+
+                # Total ausente não significa totalizado igual a zero.
+                df[col] = converted if col == "Total" else converted.fillna(0)
         
         logger.info(f"Processamento concluido para {medidor_model}. {len(df)} registros processados.")
         return df
