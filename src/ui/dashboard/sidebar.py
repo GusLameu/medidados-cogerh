@@ -30,6 +30,8 @@ class DashboardSidebar:
         on_open_details: Callable[[], None],
         on_export: Callable[[], None],
         on_new_import: Callable[[], None],
+        anomaly_count: int = 0,
+        on_open_anomalies: Callable[[], None] | None = None,
     ) -> None:
         """
         Inicializa e renderiza a barra lateral.
@@ -55,6 +57,8 @@ class DashboardSidebar:
         self.on_new_import: Callable[[], None] = on_new_import
 
         self.total_label: Optional[ctk.CTkLabel] = None
+        self.anomaly_count: int = anomaly_count
+        self.on_open_anomalies: Callable[[], None] | None = on_open_anomalies
         self.frame: ctk.CTkFrame = self._build()
 
     def _build(self) -> ctk.CTkFrame:
@@ -199,6 +203,16 @@ class DashboardSidebar:
             fg_color="#6c757d",
             height=45,
         ).pack(pady=10, padx=30, fill="x")
+
+        if self.anomaly_count > 0 and self.on_open_anomalies is not None:
+            ctk.CTkButton(
+                sidebar_frame,
+                text=f"Anomalias ({self.anomaly_count})",
+                command=self.on_open_anomalies,
+                fg_color="#B71C1C",
+                hover_color="#8E1414",
+                height=45,
+            ).pack(pady=(10, 10), padx=30, fill="x")
 
     @staticmethod
     def _add_info_label(

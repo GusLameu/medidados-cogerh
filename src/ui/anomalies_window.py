@@ -1,153 +1,195 @@
 """
-Janela de visualização das anomalias identificadas no totalizado.
+Visualização das ocorrências suspeitas identificadas no totalizado.
 """
-from typing import Optional
+from tkinter import ttk
 
 import customtkinter as ctk
 import pandas as pd
-from tkinter import ttk
+
+from src.services.anomaly_detection import AnomalyConfig
 
 
 class AnomaliesWindow(ctk.CTkToplevel):
-    """
-    Exibe anomalias identificadas em saltos do totalizado do medidor.
-    """
+    """Exibe o resultado da detecção sem modificar os dados originais."""
 
     def __init__(
         self,
         parent: ctk.CTkToplevel,
         anomalies_df: pd.DataFrame,
         medidor_model: str,
-        unit: str,
+        config: AnomalyConfig,
     ) -> None:
         super().__init__(parent)
 
         self.anomalies_df: pd.DataFrame = anomalies_df.copy()
-        self.medidor_model: str = medidor_model
-        self.unit: str = unit
+        self.config: AnomalyConfig = config
 
         self.title(f"Medidados - Anomalias ({medidor_model})")
-        self.geometry("1100x600")
+        self.geometry("1200x650")
+        self.minsize(850, 450)
         self.configure(fg_color="white")
         self.transient(parent)
-        self.grab_set()
 
-        self._setup_layout()
+        self._build_layout()
+        self._populate_table()
 
-    def _setup_layout(self) -> None:
-        """Monta título, resumo e tabela de anomalias."""
+    def _build_layout(self) -> None:
+        """Cria cabeçalho, tabela e botão de fechamento."""
         ctk.CTkLabel(
             self,
             text="ANOMALIAS NO TOTALIZADO",
             font=("Arial", 22, "bold"),
-            text_color="#D32F2F",
-        ).pack(pady=(20, 5))
+            text_color="#B71C1C",
+        ).pack(pady=(20, 8))
+
+        positive_count = int(
+            self.anomalies_df["TipoAnomalia"]
+            .eq("Aumento atípico no totalizado")
+            .sum()
+        )
+        negative_count = int(
+            self.anomalies_df["TipoAnomalia"]
+            .eq("Possível reset/redução")
+            .sum()
+        )
 
         ctk.CTkLabel(
             self,
             text=(
-                f"Foram encontradas {len(self.anomalies_df)} ocorrências. "
-                "Aumentos atípicos e reduções no totalizado exigem validação."
+                f"{len(self.anomalies_df)} ocorrências | "
+                f"Aumentos atípicos: {positive_count} | "
+                f"Possíveis resets/reduções: {negative_count}"
             ),
             font=("Arial", 13),
-            text_color="#444444",
-        ).pack(pady=(0, 20))
+            text_color="#333333",
+        ).pack(pady=(0, 8))
 
-        table_frame = ctk.CTkFrame(self, fg_color="white")
-        table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 15))
-
-        columns: tuple[str, ...] = (
-            "data",
-            "tipo",
-            "anterior",
-            "atual",
-            "variacao",
-            "limite",
-            "severidade",
+        interval_text = (
+            "sem limite de intervalo"
+            if self.config.max_interval_minutes is None
+            else f"intervalo máximo de {self.config.max_interval_minutes:g} min"
         )
 
-        self.tree = ttk.Treeview(
+        ctk.CTkLabel(
+            self,
+            text=(
+                f"Salto positivo > {self.config.positive_jump_threshold:,.2f}; "
+                f"{interval_text}.\n"
+                "Valores na unidade original do totalizado. "
+                "Ocorrências exigem análise; não confirmam falha ou zeragem."
+            ),
+            font=("Arial", 12),
+            text_color="#555555",
+            wraplength=1000,
+        ).pack(padx=20, pady=(0, 15))
+
+        table_frame = ctk.CTkFrame(self, fg_color="white")
+        table_frame.pack(
+            fill="both",
+            expand=True,
+            padx=20,
+            pady=(0, 15),
+        )
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+        columns: tuple[str, ...] = (
+            "previous_date",
+            "date",
+            "type",
+            "previous_total",
+            "total",
+            "variation",
+            "interval",
+        )
+
+        self.tree: ttk.Treeview = ttk.Treeview(
             table_frame,
             columns=columns,
             show="headings",
-            height=18,
+            selectmode="browse",
         )
 
         headings: dict[str, str] = {
-            "data": "Data",
-            "tipo": "Tipo",
-            "anterior": "Total anterior",
-            "atual": "Total atual",
-            "variacao": "Variação",
-            "limite": "Limite de salto",
-            "severidade": "Severidade",
-        }
-
-        widths: dict[str, int] = {
-            "data": 150,
-            "tipo": 250,
-            "anterior": 125,
-            "atual": 125,
-            "variacao": 125,
-            "limite": 125,
-            "severidade": 100,
+            "previous_date": "Data anterior",
+            "date": "Data atual",
+            "type": "Ocorrência",
+            "previous_total": "Total anterior",
+            "total": "Total atual",
+            "variation": "Variação",
+            "interval": "Intervalo (min)",
         }
 
         for column in columns:
             self.tree.heading(column, text=headings[column])
             self.tree.column(
                 column,
-                width=widths[column],
-                anchor="center",
+                width=240 if column == "type" else 150,
+                minwidth=110,
+                anchor="w" if column == "type" else "center",
+                stretch=False,
             )
 
         self.tree.tag_configure(
-            "alta",
+            "positive",
             background="#FDECEA",
-            foreground="#B71C1C",
+            foreground="#8B1A1A",
         )
         self.tree.tag_configure(
-            "media",
+            "negative",
             background="#FFF8E1",
-            foreground="#8A6200",
+            foreground="#705000",
         )
 
-        for _, row in self.anomalies_df.iterrows():
-            date_value = pd.Timestamp(row["Data"]).strftime("%d/%m/%Y %H:%M")
-
-            severity = str(row["Severidade"])
-            tag = "alta" if severity == "Alta" else "media"
-
-            self.tree.insert(
-                "",
-                "end",
-                values=(
-                    date_value,
-                    str(row["TipoAnomalia"]),
-                    f"{float(row['TotalAnterior']):,.2f}",
-                    f"{float(row['Total']):,.2f}",
-                    f"{float(row['Variacao']):,.2f}",
-                    f"{float(row['LimiteAnomalia']):,.2f}",
-                    severity,
-                ),
-                tags=(tag,),
-            )
-
-        scrollbar = ttk.Scrollbar(
+        vertical_scroll = ttk.Scrollbar(
             table_frame,
             orient="vertical",
             command=self.tree.yview,
         )
-        self.tree.configure(yscrollcommand=scrollbar.set)
+        horizontal_scroll = ttk.Scrollbar(
+            table_frame,
+            orient="horizontal",
+            command=self.tree.xview,
+        )
 
-        self.tree.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        self.tree.configure(
+            yscrollcommand=vertical_scroll.set,
+            xscrollcommand=horizontal_scroll.set,
+        )
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        vertical_scroll.grid(row=0, column=1, sticky="ns")
+        horizontal_scroll.grid(row=1, column=0, sticky="ew")
 
         ctk.CTkButton(
             self,
             text="Fechar",
             command=self.destroy,
-            fg_color="#6C757D",
+            fg_color="#6c757d",
             height=40,
             width=150,
         ).pack(pady=(0, 20))
+
+    def _populate_table(self) -> None:
+        """Preenche a tabela com as ocorrências já calculadas."""
+        for _, row in self.anomalies_df.iterrows():
+            variation = float(row["Variacao"])
+
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    pd.Timestamp(row["DataAnterior"]).strftime(
+                        "%d/%m/%Y %H:%M:%S"
+                    ),
+                    pd.Timestamp(row["Data"]).strftime(
+                        "%d/%m/%Y %H:%M:%S"
+                    ),
+                    str(row["TipoAnomalia"]),
+                    f"{float(row['TotalAnterior']):,.2f}",
+                    f"{float(row['Total']):,.2f}",
+                    f"{variation:+,.2f}",
+                    f"{float(row['IntervaloMinutos']):,.2f}",
+                ),
+                tags=("negative" if variation < 0 else "positive",),
+            )
