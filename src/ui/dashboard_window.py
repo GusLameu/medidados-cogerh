@@ -454,21 +454,18 @@ class DashboardWindow(ctk.CTkToplevel):
         self.destroy()
 
     def _on_closing(self) -> None:
-        """Confirma o encerramento e fecha corretamente todas as janelas."""
-        if not messagebox.askokcancel("Sair", "Deseja realmente fechar o programa?"):
+        """Confirma e solicita o encerramento da aplicação principal."""
+        confirmed = messagebox.askokcancel(
+            "Sair",
+            "Deseja realmente fechar o programa?",
+            parent=self,
+        )
+
+        if not confirmed:
             return
 
-        try:
-            plt.close("all")
-            self.destroy()
-            self.parent.destroy()
-        except Exception as error:
-            logger.error(f"Erro ao fechar dashboard: {error}")
-            try:
-                self.destroy()
-                self.parent.destroy()
-            except Exception:
-                pass
+        plt.close(self.fig)
+        self.parent.close_application()
 
     def _export_report(self) -> None:
         """Exporta o gráfico do dashboard como uma imagem PNG."""

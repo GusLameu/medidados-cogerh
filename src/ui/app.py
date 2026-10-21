@@ -4,7 +4,7 @@ Modulo principal da interface grafica do usuario (GUI) para o aplicativo Medidad
 from typing import Any, Dict, Optional, Tuple
 import pandas as pd
 import customtkinter as ctk
-from tkinter import filedialog, messagebox
+from tkinter import TclError, filedialog, messagebox
 from tkinterdnd2 import TkinterDnD, DND_FILES
 import threading
 import os
@@ -43,6 +43,9 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper):
         Inicializa a aplicacao, configura a janela principal e os widgets.
         """
         super().__init__()
+
+        self._is_closing: bool = False
+        self.protocol("WM_DELETE_WINDOW", self.close_application)
         
         # Configurar tema
         ctk.set_appearance_mode("dark")
@@ -313,32 +316,43 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper):
             self.after(0, self._reset_interface)
     
     def _finalizar_carregamento(
-        self, 
-        df: pd.DataFrame, 
-        medidor_model: str, 
-        medidor_type: str, 
-        unit: str
-    ) -> None:
-        """
-        Finaliza o carregamento e abre a janela do dashboard.
-        
-        Args:
-            df: DataFrame processado com dados do medidor.
-            medidor_model: Modelo do medidor.
-            medidor_type: Tipo do medidor.
-            unit: Unidade de medida de vazao.
-        """
+    self,
+    df: pd.DataFrame,
+    medidor_model: str,
+    medidor_type: str,
+    unit: str,
+) -> None:
+        """Abre o dashboard e restaura a importação quando apropriado."""
+        if self._is_closing:
+            return
+
         self.withdraw()
-        
-        dashboard: DashboardWindow = DashboardWindow(
-            self, df, medidor_model, medidor_type, unit=unit
+
+        dashboard = DashboardWindow(
+            self,
+            df,
+            medidor_model,
+            medidor_type,
+            unit=unit,
         )
+
         self.wait_window(dashboard)
-        
-        # Verificar se janela pai ainda existe antes de operar
-        if self.winfo_exists():
+
+        # wait_window também retorna quando o programa inteiro é encerrado.
+        # Nesse caso, não execute mais comandos Tk.
+        if self._is_closing:
+            return
+
+        try:
+            if not self.winfo_exists():
+                return
+
             self.deiconify()
             self._reset_interface()
+        except TclError:
+            # Proteção adicional caso a janela tenha sido destruída
+            # por outro caminho ainda não centralizado.
+            return
     
     def _reset_interface(self) -> None:
         """
@@ -346,3 +360,34 @@ class AppAnalise(ctk.CTk, TkinterDnD.DnDWrapper):
         """
         if self.winfo_exists():
             self._set_processing_state(False)
+
+    def close_application(self) -> None:
+        """Encerra a aplicação sem deixar callbacks agendados ativos."""
+        if self._is_closing:
+            return
+
+        self._is_closing = True
+
+        # Neste ponto estamos encerrando a aplicação inteira.
+        # Cancela callbacks pendentes antes de destruir os widgets.
+        try:
+            pending_callbacks = self.tk.call("after", "info")
+
+            for callback_id in self.tk.splitlist(pending_callbacks):
+                try:
+                    self.after_cancel(callback_id)
+                except TclError:
+                    pass
+        except TclError:
+            pass
+
+        # Solicita a saída do loop principal e destrói a árvore de widgets.
+        try:
+            self.quit()
+        except TclError:
+            pass
+
+        try:
+            self.destroy()
+        except TclError:
+            pass
