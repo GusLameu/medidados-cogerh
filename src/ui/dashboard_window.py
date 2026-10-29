@@ -472,9 +472,28 @@ class DashboardWindow(ctk.CTkToplevel):
         file_path: str = filedialog.asksaveasfilename(
             defaultextension=".png",
             filetypes=[("Imagem PNG", "*.png")],
+            title="Exportar Relatório",
+            initialfile=f"relatorio_{self.medidor_model}.png",
+            parent=self,
         )
-        if file_path:
+        if not file_path:
+            return
+
+        try:
             self.fig.savefig(file_path, dpi=300, bbox_inches="tight")
+            self.canvas.draw()
+            messagebox.showinfo(
+                "Exportação Concluída",
+                f"Relatório salvo com sucesso em:\n{file_path}",
+                parent=self,
+            )
+        except Exception as error:
+            logger.error(f"Erro ao exportar relatório: {error}")
+            messagebox.showerror(
+                "Erro na Exportação",
+                f"Não foi possível salvar o relatório:\n{error}",
+                parent=self,
+            )
 
     def _open_anomalies_window(self) -> None:
         """Abre a visualização ou traz uma janela existente para frente."""

@@ -15,10 +15,13 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.text import Annotation
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 
 from src.core.config import COR_AREA, COR_NIVEL, COR_VAZAO, COR_VELOCIDADE
 from src.utils.helpers import resource_path
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 CanvasBackground: TypeAlias = Any
@@ -389,9 +392,28 @@ class DetailedDashboardWindow(ctk.CTkToplevel):
         file_path: str = filedialog.asksaveasfilename(
             defaultextension=".png",
             filetypes=[("Imagem PNG", "*.png")],
+            title="Exportar Relatório Detalhado",
+            initialfile=f"relatorio_detalhado_{self.medidor_model}.png",
+            parent=self,
         )
-        if file_path:
+        if not file_path:
+            return
+
+        try:
             self.fig.savefig(file_path, dpi=300, bbox_inches="tight")
+            self.canvas.draw()
+            messagebox.showinfo(
+                "Exportação Concluída",
+                f"Relatório salvo com sucesso em:\n{file_path}",
+                parent=self,
+            )
+        except Exception as error:
+            logger.error(f"Erro ao exportar dashboard detalhado: {error}")
+            messagebox.showerror(
+                "Erro na Exportação",
+                f"Não foi possível salvar o relatório:\n{error}",
+                parent=self,
+            )
 
     def _add_info_panel(self, data_frame: pd.DataFrame, medidor_type: str) -> None:
         """Adiciona painel inferior com dados do medidor e período analisado."""
